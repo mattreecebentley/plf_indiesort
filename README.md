@@ -1,5 +1,5 @@
 # plf_indiesort
-A sort wrapper enabling both use of random-access (eg. std::sort) sorting on non-random access containers, and increased performance for the sorting of large types.
+A sort wrapper enabling use of random-access (eg. std::sort) sorting on non-random access containers, and increased performance for the sorting of large types in random-access containers.
 
 Indiesort should be used when:
 
