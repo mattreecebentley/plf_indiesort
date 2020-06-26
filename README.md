@@ -3,7 +3,7 @@ A sort wrapper enabling use of random-access (eg. std::sort) sorting on non-rand
 
 Indiesort should be used when:
 
-* The temporary memory cost mentioned is non-problematic,
+* A temporary memory cost of N * (sizeof(pointer) + sizeof(size_t)) is non-problematic,
 * The container or iterators are not random_access and therefore std::sort cannot be used, and/or
 * The element type is large or non-trivially-movable/copyable.
 
