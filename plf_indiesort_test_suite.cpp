@@ -278,7 +278,7 @@ struct large_struct
 	int numbers[100];
 	char a_string[50];
 	double unused_number;
-	double number;
+	int number;
 	double *empty_field_1;
 	double *empty_field_2;
 	unsigned int empty_field3;
