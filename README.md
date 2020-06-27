@@ -14,3 +14,4 @@ It is, on average across all numbers of sorted elements:
 * +28% faster than std::list's internal sort, on types smaller than a large struct.
 
 std::list's internal sort is faster for large structs (as it only writes previous and next pointers) and std::sort is faster on vectors and arrays for smaller types.
+C++98/03/11/14/etc-compatible.
