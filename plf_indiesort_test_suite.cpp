@@ -1,3 +1,12 @@
+#if defined(_MSC_VER)
+	#if _MSC_VER >= 1600
+		#define PLF_MOVE_SEMANTICS_SUPPORT
+	#endif
+#elif defined(__cplusplus) && __cplusplus >= 201103L // C++11 support, at least
+	#define PLF_MOVE_SEMANTICS_SUPPORT
+#endif
+
+
 #include <functional> // std::greater
 #include <vector>
 #include <list>
@@ -52,6 +61,7 @@ struct small_struct
 };
 
 
+
 int global_counter = 0;
 
 struct small_struct_non_trivial
@@ -65,6 +75,14 @@ struct small_struct_non_trivial
 
 	small_struct_non_trivial() : number(0) {};
 	small_struct_non_trivial(const int num) : number(num) {};
+	small_struct_non_trivial(const small_struct_non_trivial &source) : number(source.number) {};
+	small_struct_non_trivial operator = (small_struct_non_trivial &source) { number = source.number; return *this; };
+
+	#ifdef PLF_MOVE_SEMANTICS_SUPPORT
+		small_struct_non_trivial(small_struct_non_trivial &&source) : number(std::move(source.number)) {};
+		small_struct_non_trivial operator = (small_struct_non_trivial &&source) { number = std::move(source.number); return *this; };
+	#endif
+
 	int operator * () const { return number; };
 	bool operator == (const small_struct_non_trivial &source) const { return source.number == number; };
 	bool operator != (const small_struct_non_trivial &source) const { return source.number != number; };
@@ -73,6 +91,7 @@ struct small_struct_non_trivial
 	bool operator >= (const small_struct_non_trivial &source) const { return number >= source.number; };
 	bool operator <= (const small_struct_non_trivial &source) const { return number <= source.number; };
 };
+
 
 
 struct large_struct
@@ -413,13 +432,13 @@ int main()
 				{
 					if (last > *start)
 					{
-						breakfail("Worst-case std::list sort test > *it!.");
+						breakfail("std::list sort test > *it!.");
 					}
 					
 					last = *start;
 				} while (++start != end);
 
-				std::cout << "Worst-case std::list sort test passed\n";
+				std::cout << "std::list sort test passed\n";
 			}
 
 
@@ -448,13 +467,13 @@ int main()
 				{
 					if (last > **start)
 					{
-						breakfail("Worst-case std::list small_struct sort test > *it!.");
+						breakfail("std::list small_struct sort test > *it!.");
 					}
 					
 					last = **start;
 				} while (++start != end);
 
-				std::cout << "Worst-case std::list small_struct sort test passed\n";
+				std::cout << "std::list small_struct sort test passed\n";
 			}
 
 
@@ -483,13 +502,13 @@ int main()
 				{
 					if (last > **start)
 					{
-						breakfail("Worst-case std::list large_struct sort test > *it!.");
+						breakfail("std::list large_struct sort test > *it!.");
 					}
 					
 					last = **start;
 				} while (++start != end);
 
-				std::cout << "Worst-case std::list large_struct sort test passed\n";
+				std::cout << "std::list large_struct sort test passed\n";
 			}
 
 
