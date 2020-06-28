@@ -10,8 +10,8 @@ Indiesort should be used when:
 
 It is, on average across all numbers of sorted elements:
 
-* +130% faster than std::sort when used on vectors or arrays of large structs (~480 bytes)
-* +28% faster than std::list's internal sort, on types smaller than a large struct.
+* +130% faster than std::sort when used on vectors or arrays of large structs (496 bytes). Crossover point for increased performance over std::sort is any type larger than 152 bytes.
+* +28% faster than std::list's internal sort, on types smaller than a large struct. Crossover point for increase performance over std::list's internal sort() is any type smaller than 272 bytes.
 
 std::list's internal sort is faster for large structs (as it only writes previous and next pointers) and std::sort is faster on vectors and arrays for smaller types.
 C++98/03/11/14/etc-compatible.
