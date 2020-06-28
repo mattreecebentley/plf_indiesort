@@ -24,32 +24,22 @@
 // Compiler-specific defines used by indiesort:
 
 #if defined(_MSC_VER)
-	#if _MSC_VER < 1600
+	#if _MSC_VER < 1900
 		#define PLF_INDSORT_NOEXCEPT throw()
-	#elif _MSC_VER == 1600
-		#define PLF_INDSORT_DECLTYPE_SUPPORT
-		#define PLF_INDSORT_MOVE_SEMANTICS_SUPPORT
-		#define PLF_INDSORT_NOEXCEPT throw()
-	#elif _MSC_VER == 1700
-		#define PLF_INDSORT_DECLTYPE_SUPPORT
-		#define PLF_INDSORT_TYPE_TRAITS_SUPPORT
-		#define PLF_INDSORT_ALLOCATOR_TRAITS_SUPPORT
-		#define PLF_INDSORT_MOVE_SEMANTICS_SUPPORT
-		#define PLF_INDSORT_NOEXCEPT throw()
-	#elif _MSC_VER == 1800
-		#define PLF_INDSORT_DECLTYPE_SUPPORT
-		#define PLF_INDSORT_TYPE_TRAITS_SUPPORT
-		#define PLF_INDSORT_ALLOCATOR_TRAITS_SUPPORT
-		#define PLF_INDSORT_VARIADICS_SUPPORT // Variadics, in this context, means both variadic templates and variadic macros are supported
-		#define PLF_INDSORT_MOVE_SEMANTICS_SUPPORT
-		#define PLF_INDSORT_NOEXCEPT throw()
-	#elif _MSC_VER >= 1900
-		#define PLF_INDSORT_DECLTYPE_SUPPORT
-		#define PLF_INDSORT_TYPE_TRAITS_SUPPORT
-		#define PLF_INDSORT_ALLOCATOR_TRAITS_SUPPORT
-		#define PLF_INDSORT_VARIADICS_SUPPORT
-		#define PLF_INDSORT_MOVE_SEMANTICS_SUPPORT
+	#else
 		#define PLF_INDSORT_NOEXCEPT noexcept
+	#endif
+
+	#if _MSC_VER >= 1600
+		#define PLF_INDSORT_DECLTYPE_SUPPORT
+		#define PLF_INDSORT_MOVE_SEMANTICS_SUPPORT
+	#endif
+	#if _MSC_VER >= 1700
+		#define PLF_INDSORT_TYPE_TRAITS_SUPPORT
+		#define PLF_INDSORT_ALLOCATOR_TRAITS_SUPPORT
+	#endif
+	#if _MSC_VER >= 1800
+		#define PLF_INDSORT_VARIADICS_SUPPORT // Variadics, in this context, means both variadic templates and variadic macros are supported
 	#endif
 
 	#if defined(_MSVC_LANG) && (_MSVC_LANG >= 201703L)
@@ -60,22 +50,21 @@
 	#endif
 
 #elif defined(__cplusplus) && __cplusplus >= 201103L // C++11 support, at least
+	#define PLF_INDSORT_MOVE_SEMANTICS_SUPPORT
+
 	#if defined(__GNUC__) && defined(__GNUC_MINOR__) && !defined(__clang__) // If compiler is GCC/G++
 		#if (__GNUC__ == 4 && __GNUC_MINOR__ >= 3) || __GNUC__ > 4 // 4.2 and below do not support variadic templates or decltype
 			#define PLF_INDSORT_VARIADICS_SUPPORT
 			#define PLF_INDSORT_DECLTYPE_SUPPORT
 		#endif
-
 		#if (__GNUC__ == 4 && __GNUC_MINOR__ < 6) || __GNUC__ < 4
 			#define PLF_INDSORT_NOEXCEPT throw()
 		#else
 			#define PLF_INDSORT_NOEXCEPT noexcept
 		#endif
-
 		#if (__GNUC__ == 4 && __GNUC_MINOR__ >= 7) || __GNUC__ > 4
 			#define PLF_INDSORT_ALLOCATOR_TRAITS_SUPPORT
 		#endif
-
 		#if __GNUC__ >= 5 // GCC v4.9 and below do not support std::is_trivially_copyable
 			#define PLF_INDSORT_TYPE_TRAITS_SUPPORT
 		#endif
@@ -97,42 +86,23 @@
 		#if __GLIBCXX__ >= 20150422 // libstdc++ v4.9 and below do not support std::is_trivially_copyable
 			#define PLF_INDSORT_TYPE_TRAITS_SUPPORT
 		#endif
-	#elif defined(_LIBCPP_VERSION)
-		#define PLF_INDSORT_ALLOCATOR_TRAITS_SUPPORT
-		#define PLF_INDSORT_VARIADICS_SUPPORT
-		#define PLF_INDSORT_INITIALIZER_LIST_SUPPORT
-		#define PLF_INDSORT_NOEXCEPT noexcept
-
-		#if !(defined(_LIBCPP_CXX03_LANG) || defined(_LIBCPP_HAS_NO_RVALUE_REFERENCES))
-			#define PLF_INDSORT_DECLTYPE_SUPPORT
-			#define PLF_INDSORT_TYPE_TRAITS_SUPPORT
-		#endif
+	#elif (defined(_LIBCPP_CXX03_LANG) || defined(_LIBCPP_HAS_NO_RVALUE_REFERENCES) || defined(_LIBCPP_HAS_NO_VARIADICS)) // Special case for checking C++11 support with libCPP
+		#define PLF_STACK_NOEXCEPT throw()
 	#else // Assume type traits and initializer support for other compilers and standard libraries
 		#define PLF_INDSORT_DECLTYPE_SUPPORT
+		#define PLF_INDSORT_INITIALIZER_LIST_SUPPORT
 		#define PLF_INDSORT_ALLOCATOR_TRAITS_SUPPORT
 		#define PLF_INDSORT_VARIADICS_SUPPORT
 		#define PLF_INDSORT_TYPE_TRAITS_SUPPORT
 		#define PLF_INDSORT_NOEXCEPT noexcept
 	#endif
 
-	#if __cplusplus >= 201703L
-		#if defined(__clang__) && ((__clang_major__ == 3 && __clang_minor__ == 9) || __clang_major__ > 3)
-			#define PLF_INDSORT_CONSTEXPR constexpr
-			#define PLF_INDSORT_CONSTEXPR_SUPPORT
-		#elif defined(__GNUC__) && __GNUC__ >= 7
-			#define PLF_INDSORT_CONSTEXPR constexpr
-			#define PLF_INDSORT_CONSTEXPR_SUPPORT
-		#elif !defined(__clang__) && !defined(__GNUC__)
-			#define PLF_INDSORT_CONSTEXPR constexpr // assume correct C++17 implementation for other compilers
-			#define PLF_INDSORT_CONSTEXPR_SUPPORT
-		#else
-			#define PLF_INDSORT_CONSTEXPR
-		#endif
+	#if __cplusplus >= 201703L  &&   ((defined(__clang__) && ((__clang_major__ == 3 && __clang_minor__ == 9) || __clang_major__ > 3))   ||   (defined(__GNUC__) && __GNUC__ >= 7)   ||   (!defined(__clang__) && !defined(__GNUC__)))
+		#define PLF_INDSORT_CONSTEXPR constexpr
+		#define PLF_INDSORT_CONSTEXPR_SUPPORT
 	#else
 		#define PLF_INDSORT_CONSTEXPR
 	#endif
-
-	#define PLF_INDSORT_MOVE_SEMANTICS_SUPPORT
 #else
 	#define PLF_INDSORT_NOEXCEPT throw()
 	#define PLF_INDSORT_CONSTEXPR
@@ -268,7 +238,6 @@ namespace plf
 	template< class T > struct remove_pointer<T* const volatile> {typedef T type;};
 
 
-
 	template <bool flag, class the_type> struct derive_type;
 
 	template <class the_type> struct derive_type<true, the_type>
@@ -352,7 +321,7 @@ namespace plf
 					element_type end_value = std::move(*(current_tuple->original_location));
 				#else
 					element_type end_value = *(current_tuple->original_location);
-					*(current_tuple->original_location).~element_type();
+					(*(current_tuple->original_location)).~element_type();
 				#endif
 
 				size_type destination_index = index;
@@ -364,7 +333,7 @@ namespace plf
 						*(sort_array[destination_index].original_location) = std::move(*(sort_array[source_index].original_location));
 					#else
 						*(sort_array[destination_index].original_location) = *(sort_array[source_index].original_location);
-						*(sort_array[source_index].original_location).~element_type();
+						(*(sort_array[source_index].original_location)).~element_type();
 					#endif
 
 				   destination_index = source_index;
