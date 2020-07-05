@@ -19,7 +19,7 @@
 void title1(const char *title_text)
 {
 	std::cout << std::endl << std::endl << std::endl << "*** " << title_text << " ***" << std::endl;
-	std::cout << "===========================================" << std::endl << std::endl << std::endl; 
+	std::cout << "===========================================" << std::endl << std::endl << std::endl;
 }
 
 
@@ -152,109 +152,109 @@ int main()
 			title2("Test Basics Int");
 
 			std::vector<int> vec;
-			
+
 			for (int i = 60; i != -1; --i)
 			{
 				vec.push_back(i);
 			}
-			
+
 			for (int i = 0; i != 60; ++i)
 			{
 				vec.push_back(i);
 			}
-			
+
 			plf::indiesort(vec);
-			
+
 			int last = 0;
-			
+
 			for (std::vector<int>::iterator it = vec.begin(); it != vec.end(); ++it)
 			{
 				if (last > *it)
 				{
 					breakfail("Sequential int last > *it!.");
 				}
-				
+
 				last = *it;
 			}
 
 			std::cout << "Sequential int passed\n";
 
 			vec.clear();
-			
-			
+
+
 			for (int i = 0; i != 70000; ++i)
 			{
 				vec.push_back(xor_rand() & 65535);
 			}
-			
+
 			plf::indiesort(vec, std::greater<int>());
-			
+
 			last = 65535;
-			
+
 			for (std::vector<int>::iterator it = vec.begin(); it != vec.end(); ++it)
 			{
 				if (last < *it)
 				{
 					breakfail("Random int last < *it!.");
 				}
-				
+
 				last = *it;
 			}
 
 			std::cout << "Random int passed\n";
 		}
 
-		
+
 		{
 			title2("Test Basics small_struct");
 
 			std::vector<small_struct> vec;
-			
+
 			for (int i = 60; i != -1; --i)
 			{
 				vec.push_back(i);
 			}
-			
+
 			for (int i = 0; i != 60; ++i)
 			{
 				vec.push_back(i);
 			}
-			
+
 			plf::indiesort(vec);
-			
+
 			small_struct last = 0;
-			
+
 			for (std::vector<small_struct>::iterator it = vec.begin(); it != vec.end(); ++it)
 			{
 				if (last > **it)
 				{
 					breakfail("Sequential small_struct last > *it!.");
 				}
-				
+
 				last = **it;
 			}
 
 			std::cout << "Sequential Small Struct passed\n";
 
 			vec.clear();
-			
-			
+
+
 			for (int i = 0; i != 6000; ++i)
 			{
 				vec.push_back(xor_rand() & 65535);
 			}
-			
+
 			plf::indiesort(vec, std::greater<small_struct>());
-			
+
 			last = 65535;
-			
+
 			for (std::vector<small_struct>::iterator it = vec.begin(); it != vec.end(); ++it)
 			{
 				if (last < *it)
 				{
 					breakfail("Random small_struct last < *it!.");
 				}
-				
+
 				last = *it;
 			}
 
@@ -283,7 +283,7 @@ int main()
 				{
 					breakfail("Random large_struct last > *it!.");
 				}
-				
+
 				last = structs[i];
 			}
 
@@ -296,53 +296,53 @@ int main()
 			title2("Test Basics small_struct_non_trivial");
 
 			std::vector<small_struct_non_trivial> vec;
-			
+
 			for (int i = 60; i != -1; --i)
 			{
 				vec.push_back(i);
 			}
-			
+
 			for (int i = 0; i != 60; ++i)
 			{
 				vec.push_back(i);
 			}
-			
+
 			plf::indiesort(vec);
 
-			small_struct_non_trivial last = 0;
-			
+			int last = 0;
+
 			for (std::vector<small_struct_non_trivial>::iterator it = vec.begin(); it != vec.end(); ++it)
 			{
 				if (last > **it)
 				{
 					breakfail("Sequential small_struct_non_trivial last > *it!.");
 				}
-				
+
 				last = **it;
 			}
 
 			std::cout << "Sequential small_struct_non_trivial passed\n";
 
 			vec.clear();
-			
-			
+
+
 			for (int i = 0; i != 6000; ++i)
 			{
 				vec.push_back(xor_rand() & 65535);
 			}
-			
+
 			plf::indiesort(vec, std::greater<small_struct_non_trivial>());
-			
+
 			last = 65535;
-			
+
 			for (std::vector<small_struct_non_trivial>::iterator it = vec.begin(); it != vec.end(); ++it)
 			{
-				if (last < *it)
+				if (last < **it)
 				{
 					breakfail("Random small_struct_non_trivial last < *it!.");
 				}
-				
-				last = *it;
+
+				last = **it;
 			}
 
 			std::cout << "Random small_struct_non_trivial passed\n";
@@ -354,52 +354,52 @@ int main()
 			title2("Test Basics large_struct");
 
 			std::vector<large_struct> vec;
-			
+
 			for (int i = 60; i != -1; --i)
 			{
 				vec.push_back(i);
 			}
-			
+
 			for (int i = 0; i != 60; ++i)
 			{
 				vec.push_back(i);
 			}
-			
+
 			plf::indiesort(vec);
-			
+
 			large_struct last = 0;
-			
+
 			for (std::vector<large_struct>::iterator it = vec.begin(); it != vec.end(); ++it)
 			{
 				if (last > **it)
 				{
 					breakfail("Sequential large_struct last > *it!.");
 				}
-				
+
 				last = **it;
 			}
 
 			std::cout << "Sequential large_struct passed\n";
 
 			vec.clear();
-			
-			
+
+
 			for (int i = 0; i != 6000; ++i)
 			{
 				vec.push_back(xor_rand() & 65535);
 			}
-			
+
 			plf::indiesort(vec, std::greater<large_struct>());
-			
+
 			last = 65535;
-			
+
 			for (std::vector<large_struct>::iterator it = vec.begin(); it != vec.end(); ++it)
 			{
 				if (last < *it)
 				{
 					breakfail("Random large_struct last < *it!.");
 				}
-				
+
 				last = *it;
 			}
 
@@ -412,19 +412,19 @@ int main()
 		{
 			title2("std::list int range tests");
 
-			{		
-				std::list<int> ivec;
-				
+			{
+				std::list<int> ilist;
+
 				for (int i = 0; i != 2000; ++i)
 				{
-					ivec.push_back(xor_rand() & 65535);
+					ilist.push_back(xor_rand() & 65535);
 				}
-				
-				
-				std::list<int>::iterator start = ivec.begin(), end = ivec.end();
+
+
+				std::list<int>::iterator start = ilist.begin(), end = ilist.end();
 
 				plf::indiesort(start, end);
-				
+
 
 				int last = 0;
 
@@ -434,7 +434,7 @@ int main()
 					{
 						breakfail("std::list sort test > *it!.");
 					}
-					
+
 					last = *start;
 				} while (++start != end);
 
@@ -446,20 +446,20 @@ int main()
 			{
 				title2("std::list small_struct range tests");
 
-				std::list<small_struct> vec;
-				
+				std::list<small_struct> sslist;
+
 				for (int i = 0; i != 5000; ++i)
 				{
-					vec.push_back(xor_rand() & 65535);
+					sslist.push_back(xor_rand() & 65535);
 				}
-				
-				
-				std::list<small_struct>::iterator start = vec.begin(), end = vec.end();
+
+
+				std::list<small_struct>::iterator start = sslist.begin(), end = sslist.end();
 				std::advance(start, 150);
 				std::advance(end, -300);
 
 				plf::indiesort(start, end);
-				
+
 
 				int last = 0;
 
@@ -469,7 +469,7 @@ int main()
 					{
 						breakfail("std::list small_struct sort test > *it!.");
 					}
-					
+
 					last = **start;
 				} while (++start != end);
 
@@ -481,22 +481,19 @@ int main()
 			{
 				title2("std::list large_struct range tests");
 
-				std::list<large_struct> vec;
-				
+				std::list<large_struct> lslist;
+
 				for (int i = 0; i != 6000; ++i)
 				{
-					vec.push_back(xor_rand() & 65535);
+					lslist.push_back(xor_rand() & 65535);
 				}
-				
-				
-				std::list<large_struct>::iterator start = vec.begin(), end = vec.end();
-				std::advance(start, 15);
-				std::advance(end, -200);
 
-				plf::indiesort(start, end);
-				
+
+				plf::indiesort(lslist);
 
 				int last = 0;
+
+				std::list<large_struct>::iterator start = lslist.begin(), end = lslist.end();
 
 				do
 				{
@@ -504,7 +501,7 @@ int main()
 					{
 						breakfail("std::list large_struct sort test > *it!.");
 					}
-					
+
 					last = **start;
 				} while (++start != end);
 
