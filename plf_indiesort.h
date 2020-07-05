@@ -17,7 +17,6 @@
 // 	misrepresented as being the original software.
 // 3. This notice may not be removed or altered from any source distribution.
 
-
 #ifndef PLF_INDSORT_H
 #define PLF_INDSORT_H
 
@@ -470,13 +469,8 @@ namespace plf
 
 
 	// Range templates:
-
 	template <class iterator_type, class comparison_function>
-	#ifdef PLF_INDSORT_TYPE_TRAITS_SUPPORT
-		inline void indiesort(const typename plf::enable_if_c<!(plf::is_pointer<iterator_type>::value || std::is_same<typename std::iterator_traits<iterator_type>::iterator_category, std::random_access_iterator_tag>::value), iterator_type>::type first, const iterator_type last, comparison_function compare, const std::size_t size)
-	#else
-		inline void indiesort(const typename plf::enable_if_c<!plf::is_pointer<iterator_type>::value, iterator_type>::type first, const iterator_type last, comparison_function compare, const std::size_t size)
-	#endif
+	inline void indiesort(const iterator_type first, const iterator_type last, comparison_function compare, const std::size_t size)
 	{
 		plf::non_random_access_sort(first, last, compare, size);
 	}
