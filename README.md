@@ -1,8 +1,8 @@
 # plf_indiesort
 A sort wrapper enabling use of random-access (eg. std::sort) sorting on non-random access containers, and increased performance for the sorting of large types in random-access containers.
 
-It has a temporary memory cost of (N * (sizeof(pointer) + sizeof(size_t))) for sorting non-random-access iterators/containers,<br>
-and a (N * (sizeof(U))) cost for random-access iterators/containers, where U = the smallest unsigned integer able to store N + 1. For example if the size of the range being sorted is &lt; 255, U can be unsigned char.
+It has a temporary memory cost of N * (sizeof(pointer) + sizeof(size_t)) for sorting non-random-access iterators/containers,<br>
+and a N * sizeof(U) cost for random-access iterators/containers, where U = the smallest unsigned integer able to store N + 1. For example if the size of the range being sorted is &lt; 255, U will be unsigned char.
 
 Indiesort should be used when:
 
