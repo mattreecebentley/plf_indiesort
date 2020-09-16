@@ -128,6 +128,7 @@
 #endif
 
 
+
 #ifndef PLF_INDSORT_SORT_FUNCTION
 	#include <algorithm> // std::sort
 #endif
@@ -197,6 +198,7 @@ namespace plf
 	template< class T > struct remove_pointer<T* const volatile> {typedef T type;};
 
 
+
 	template <bool flag, class the_type> struct derive_type;
 
 	template <class the_type> struct derive_type<true, the_type>
@@ -259,8 +261,6 @@ namespace plf
 			PLF_INDSORT_SORT_FUNCTION(sort_array, size_type_pointer, plf::random_access_sort_dereferencer<comparison_function, iterator_type, size_type>(compare, first));
 		#endif
 
-		// This special value indicates that the element being pointed to in that tuple has been sorted already:
-		PLF_INDSORT_CONSTEXPR const size_type sorted = std::numeric_limits<size_type>::max(); // Also improves performance for pre-constexpr compilers
 
 
 		// Sort the actual elements via the tuple array:
@@ -268,12 +268,19 @@ namespace plf
 
 		for (size_type *current_index = sort_array; current_index != size_type_pointer; ++current_index, ++index)
 		{
-			if (*current_index != index && *current_index != sorted)
+			if (*current_index != index)
 			{
 				size_type destination_index = index;
 
 				#ifdef PLF_INDSORT_MOVE_SEMANTICS_SUPPORT
 					element_type end_value = std::move(*(first + destination_index));
+
+					#ifdef PLF_COLONY_TYPE_TRAITS_SUPPORT // In case element was copied, not moved by std::move
+						if PLF_COLONY_CONSTEXPR ((!std::is_move_assignable<element_type>::value) && (!std::is_trivially_destructible<element_type>::value))
+						{
+							(*(first + destination_index)).~element_type();
+						}
+					#endif
 				#else
 					const iterator_type current = first + destination_index;
 					element_type end_value = *current;
@@ -286,6 +293,13 @@ namespace plf
 				{
 					#ifdef PLF_INDSORT_MOVE_SEMANTICS_SUPPORT
 						*(first + destination_index) = std::move(*(first + source_index));
+
+						#ifdef PLF_COLONY_TYPE_TRAITS_SUPPORT
+							if PLF_COLONY_CONSTEXPR ((!std::is_move_assignable<element_type>::value) && (!std::is_trivially_destructible<element_type>::value))
+							{
+								(*(first + source_index)).~element_type();
+							}
+						#endif
 					#else
 						{
 							const iterator_type source = first + source_index;
@@ -296,11 +310,18 @@ namespace plf
 
 					destination_index = source_index;
 					source_index = sort_array[destination_index];
-					sort_array[destination_index] = sorted;
+					sort_array[destination_index] = destination_index;
 				} while (source_index != index);
 
 				#ifdef PLF_INDSORT_MOVE_SEMANTICS_SUPPORT
 					*(first + destination_index) = std::move(end_value);
+
+					#ifdef PLF_COLONY_TYPE_TRAITS_SUPPORT
+						if PLF_COLONY_CONSTEXPR ((!std::is_move_assignable<element_type>::value) && (!std::is_trivially_destructible<element_type>::value))
+						{
+							end_value.~element_type();
+						}
+					#endif
 				#else
 					*(first + destination_index) = end_value;
 					end_value.~element_type();
@@ -323,15 +344,15 @@ namespace plf
 		{
 			return;
 		}
-		else if (size < std::numeric_limits<unsigned char>::max())
+		else if (size <= std::numeric_limits<unsigned char>::max())
 		{
 			plf::random_access_sort<iterator_type, comparison_function, unsigned char>(first, compare, static_cast<unsigned char>(size));
 		}
-		else if (size < std::numeric_limits<unsigned short>::max())
+		else if (size <= std::numeric_limits<unsigned short>::max())
 		{
 			plf::random_access_sort<iterator_type, comparison_function, unsigned short>(first, compare, static_cast<unsigned short>(size));
 		}
-		else if (size < std::numeric_limits<unsigned int>::max())
+		else if (size <= std::numeric_limits<unsigned int>::max())
 		{
 			plf::random_access_sort<iterator_type, comparison_function, unsigned int>(first, compare, static_cast<unsigned int>(size));
 		}
@@ -417,18 +438,23 @@ namespace plf
 			PLF_INDSORT_SORT_FUNCTION(sort_array, sort_array + size, plf::sort_dereferencer<comparison_function, item_index_tuple>(compare));
 		#endif
 
-		// This special value indicates that the element being pointed to in that tuple has been sorted already:
-		PLF_INDSORT_CONSTEXPR const size_type sorted = std::numeric_limits<size_type>::max(); // Also improves performance for pre-constexpr compilers
 
 		// Sort the actual elements via the tuple array:
 		index = 0;
 
 		for (item_index_tuple *current_tuple = sort_array; current_tuple != tuple_pointer; ++current_tuple, ++index)
 		{
-			if (current_tuple->original_index != index && current_tuple->original_index != sorted)
+			if (current_tuple->original_index != index)
 			{
 				#ifdef PLF_INDSORT_MOVE_SEMANTICS_SUPPORT
 					element_type end_value = std::move(*(current_tuple->original_location));
+
+					#ifdef PLF_COLONY_TYPE_TRAITS_SUPPORT
+						if PLF_COLONY_CONSTEXPR ((!std::is_move_assignable<element_type>::value) && (!std::is_trivially_destructible<element_type>::value))
+						{
+							(*(current_tuple->original_location)).~element_type();
+						}
+					#endif
 				#else
 					element_type end_value = *(current_tuple->original_location);
 					(*(current_tuple->original_location)).~element_type();
@@ -441,6 +467,13 @@ namespace plf
 				{
 					#ifdef PLF_INDSORT_MOVE_SEMANTICS_SUPPORT
 						*(sort_array[destination_index].original_location) = std::move(*(sort_array[source_index].original_location));
+
+						#ifdef PLF_COLONY_TYPE_TRAITS_SUPPORT
+							if PLF_COLONY_CONSTEXPR ((!std::is_move_assignable<element_type>::value) && (!std::is_trivially_destructible<element_type>::value))
+							{
+								(*(sort_array[source_index].original_location)).~element_type();
+							}
+						#endif
 					#else
 						{
 							element_type * const source = sort_array[source_index].original_location;
@@ -451,11 +484,18 @@ namespace plf
 
 					destination_index = source_index;
 					source_index = sort_array[destination_index].original_index;
-					sort_array[destination_index].original_index = sorted;
+					sort_array[destination_index].original_index = destination_index;
 				} while (source_index != index);
 
 				#ifdef PLF_INDSORT_MOVE_SEMANTICS_SUPPORT
 					*(sort_array[destination_index].original_location) = std::move(end_value);
+
+					#ifdef PLF_COLONY_TYPE_TRAITS_SUPPORT
+						if PLF_COLONY_CONSTEXPR ((!std::is_move_assignable<element_type>::value) && (!std::is_trivially_destructible<element_type>::value))
+						{
+							end_value.~element_type();
+						}
+					#endif
 				#else
 					*(sort_array[destination_index].original_location) = end_value;
 					end_value.~element_type();
@@ -567,6 +607,9 @@ namespace plf
 	{
 		indiesort(container, plf::less<typename container_type::value_type>());
 	}
+
+
+
 }
 
 
