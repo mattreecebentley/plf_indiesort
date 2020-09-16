@@ -274,17 +274,8 @@ namespace plf
 
 				#ifdef PLF_INDSORT_MOVE_SEMANTICS_SUPPORT
 					element_type end_value = std::move(*(first + destination_index));
-
-					#ifdef PLF_COLONY_TYPE_TRAITS_SUPPORT // In case element was copied, not moved by std::move
-						if PLF_COLONY_CONSTEXPR ((!std::is_move_assignable<element_type>::value) && (!std::is_trivially_destructible<element_type>::value))
-						{
-							(*(first + destination_index)).~element_type();
-						}
-					#endif
 				#else
-					const iterator_type current = first + destination_index;
-					element_type end_value = *current;
-					current->~element_type();
+					element_type end_value = *(first + destination_index);
 				#endif
 
 				size_type source_index = *current_index;
@@ -293,19 +284,8 @@ namespace plf
 				{
 					#ifdef PLF_INDSORT_MOVE_SEMANTICS_SUPPORT
 						*(first + destination_index) = std::move(*(first + source_index));
-
-						#ifdef PLF_COLONY_TYPE_TRAITS_SUPPORT
-							if PLF_COLONY_CONSTEXPR ((!std::is_move_assignable<element_type>::value) && (!std::is_trivially_destructible<element_type>::value))
-							{
-								(*(first + source_index)).~element_type();
-							}
-						#endif
 					#else
-						{
-							const iterator_type source = first + source_index;
-							*(first + destination_index) = *source;
-							source->~element_type();
-						}
+						*(first + destination_index) = *(first + source_index);
 					#endif
 
 					destination_index = source_index;
@@ -315,16 +295,8 @@ namespace plf
 
 				#ifdef PLF_INDSORT_MOVE_SEMANTICS_SUPPORT
 					*(first + destination_index) = std::move(end_value);
-
-					#ifdef PLF_COLONY_TYPE_TRAITS_SUPPORT
-						if PLF_COLONY_CONSTEXPR ((!std::is_move_assignable<element_type>::value) && (!std::is_trivially_destructible<element_type>::value))
-						{
-							end_value.~element_type();
-						}
-					#endif
 				#else
 					*(first + destination_index) = end_value;
-					end_value.~element_type();
 				#endif
 			}
 		}
@@ -448,16 +420,8 @@ namespace plf
 			{
 				#ifdef PLF_INDSORT_MOVE_SEMANTICS_SUPPORT
 					element_type end_value = std::move(*(current_tuple->original_location));
-
-					#ifdef PLF_COLONY_TYPE_TRAITS_SUPPORT
-						if PLF_COLONY_CONSTEXPR ((!std::is_move_assignable<element_type>::value) && (!std::is_trivially_destructible<element_type>::value))
-						{
-							(*(current_tuple->original_location)).~element_type();
-						}
-					#endif
 				#else
 					element_type end_value = *(current_tuple->original_location);
-					(*(current_tuple->original_location)).~element_type();
 				#endif
 
 				size_type destination_index = index;
@@ -467,19 +431,8 @@ namespace plf
 				{
 					#ifdef PLF_INDSORT_MOVE_SEMANTICS_SUPPORT
 						*(sort_array[destination_index].original_location) = std::move(*(sort_array[source_index].original_location));
-
-						#ifdef PLF_COLONY_TYPE_TRAITS_SUPPORT
-							if PLF_COLONY_CONSTEXPR ((!std::is_move_assignable<element_type>::value) && (!std::is_trivially_destructible<element_type>::value))
-							{
-								(*(sort_array[source_index].original_location)).~element_type();
-							}
-						#endif
 					#else
-						{
-							element_type * const source = sort_array[source_index].original_location;
-							*(sort_array[destination_index].original_location) = *source;
-							source->~element_type();
-						}
+						*(sort_array[destination_index].original_location) = *(sort_array[source_index].original_location);
 					#endif
 
 					destination_index = source_index;
@@ -489,16 +442,8 @@ namespace plf
 
 				#ifdef PLF_INDSORT_MOVE_SEMANTICS_SUPPORT
 					*(sort_array[destination_index].original_location) = std::move(end_value);
-
-					#ifdef PLF_COLONY_TYPE_TRAITS_SUPPORT
-						if PLF_COLONY_CONSTEXPR ((!std::is_move_assignable<element_type>::value) && (!std::is_trivially_destructible<element_type>::value))
-						{
-							end_value.~element_type();
-						}
-					#endif
 				#else
 					*(sort_array[destination_index].original_location) = end_value;
-					end_value.~element_type();
 				#endif
 			}
 		}
