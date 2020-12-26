@@ -1,9 +1,9 @@
 #if defined(_MSC_VER)
 	#if _MSC_VER >= 1600
-		#define PLF_MOVE_SEMANTICS_SUPPORT
+		#define PLF__MOVE_SEMANTICS_SUPPORT
 	#endif
 #elif defined(__cplusplus) && __cplusplus >= 201103L // C++11 support, at least
-	#define PLF_MOVE_SEMANTICS_SUPPORT
+	#define PLF__MOVE_SEMANTICS_SUPPORT
 #endif
 
 
@@ -12,6 +12,7 @@
 #include <list>
 #include <iostream>
 
+#include "plf_pcgrand.h"
 #include "plf_indiesort.h"
 
 
@@ -78,7 +79,7 @@ struct small_struct_non_trivial
 	small_struct_non_trivial(const small_struct_non_trivial &source) : number(source.number) {};
 	small_struct_non_trivial operator = (small_struct_non_trivial &source) { number = source.number; return *this; };
 
-	#ifdef PLF_MOVE_SEMANTICS_SUPPORT
+	#ifdef PLF__MOVE_SEMANTICS_SUPPORT
 		small_struct_non_trivial(small_struct_non_trivial &&source) : number(std::move(source.number)) {};
 		small_struct_non_trivial operator = (small_struct_non_trivial &&source) { number = std::move(source.number); return *this; };
 	#endif
@@ -116,25 +117,6 @@ struct large_struct
 	bool operator <= (const large_struct &source) const { return number <= source.number; };
 };
 
-
-
-// Fast xorshift+128 random number generator function (original: https://codingforspeed.com/using-faster-psudo-random-generator-xorshift/)
-unsigned int xor_rand()
-{
-	static unsigned int x = 123456789;
-	static unsigned int y = 362436069;
-	static unsigned int z = 521288629;
-	static unsigned int w = 88675123;
-
-	const unsigned int t = x ^ (x << 11);
-
-	// Rotate the static values (w rotation in return statement):
-	x = y;
-	y = z;
-	z = w;
-
-	return w = w ^ (w >> 19) ^ (t ^ (t >> 8));
-}
 
 
 
@@ -184,7 +166,7 @@ int main()
 
 			for (int i = 0; i != 70000; ++i)
 			{
-				vec.push_back(xor_rand() & 65535);
+				vec.push_back(plf::pcg_rand() & 65535);
 			}
 
 			plf::indiesort(vec, std::greater<int>());
@@ -241,7 +223,7 @@ int main()
 
 			for (int i = 0; i != 6000; ++i)
 			{
-				vec.push_back(xor_rand() & 65535);
+				vec.push_back(plf::pcg_rand() & 65535);
 			}
 
 			plf::indiesort(vec, std::greater<small_struct>());
@@ -270,7 +252,7 @@ int main()
 
 			for (int i = 0; i != 500; ++i)
 			{
-				structs[i] = xor_rand() & 65535;
+				structs[i] = plf::pcg_rand() & 65535;
 			}
 
 			plf::indiesort(&structs[0], &structs[500]);
@@ -328,7 +310,7 @@ int main()
 
 			for (int i = 0; i != 6000; ++i)
 			{
-				vec.push_back(xor_rand() & 65535);
+				vec.push_back(plf::pcg_rand() & 65535);
 			}
 
 			plf::indiesort(vec, std::greater<small_struct_non_trivial>());
@@ -386,7 +368,7 @@ int main()
 
 			for (int i = 0; i != 6000; ++i)
 			{
-				vec.push_back(xor_rand() & 65535);
+				vec.push_back(plf::pcg_rand() & 65535);
 			}
 
 			plf::indiesort(vec, std::greater<large_struct>());
@@ -417,7 +399,7 @@ int main()
 
 				for (int i = 0; i != 2000; ++i)
 				{
-					ilist.push_back(xor_rand() & 65535);
+					ilist.push_back(plf::pcg_rand() & 65535);
 				}
 
 
@@ -450,7 +432,7 @@ int main()
 
 				for (int i = 0; i != 5000; ++i)
 				{
-					sslist.push_back(xor_rand() & 65535);
+					sslist.push_back(plf::pcg_rand() & 65535);
 				}
 
 
@@ -485,7 +467,7 @@ int main()
 
 				for (int i = 0; i != 6000; ++i)
 				{
-					lslist.push_back(xor_rand() & 65535);
+					lslist.push_back(plf::pcg_rand() & 65535);
 				}
 
 
