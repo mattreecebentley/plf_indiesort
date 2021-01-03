@@ -12,7 +12,7 @@
 #include <list>
 #include <iostream>
 
-#include "plf_pcgrand.h"
+#include "plf_rand.h"
 #include "plf_indiesort.h"
 
 
@@ -166,7 +166,7 @@ int main()
 
 			for (int i = 0; i != 70000; ++i)
 			{
-				vec.push_back(plf::pcg_rand() & 65535);
+				vec.push_back(plf::rand() & 65535);
 			}
 
 			plf::indiesort(vec, std::greater<int>());
@@ -223,7 +223,7 @@ int main()
 
 			for (int i = 0; i != 6000; ++i)
 			{
-				vec.push_back(plf::pcg_rand() & 65535);
+				vec.push_back(plf::rand() & 65535);
 			}
 
 			plf::indiesort(vec, std::greater<small_struct>());
@@ -252,7 +252,7 @@ int main()
 
 			for (int i = 0; i != 500; ++i)
 			{
-				structs[i] = plf::pcg_rand() & 65535;
+				structs[i] = plf::rand() & 65535;
 			}
 
 			plf::indiesort(&structs[0], &structs[500]);
@@ -310,7 +310,7 @@ int main()
 
 			for (int i = 0; i != 6000; ++i)
 			{
-				vec.push_back(plf::pcg_rand() & 65535);
+				vec.push_back(plf::rand() & 65535);
 			}
 
 			plf::indiesort(vec, std::greater<small_struct_non_trivial>());
@@ -368,7 +368,7 @@ int main()
 
 			for (int i = 0; i != 6000; ++i)
 			{
-				vec.push_back(plf::pcg_rand() & 65535);
+				vec.push_back(plf::rand() & 65535);
 			}
 
 			plf::indiesort(vec, std::greater<large_struct>());
@@ -399,7 +399,7 @@ int main()
 
 				for (int i = 0; i != 2000; ++i)
 				{
-					ilist.push_back(plf::pcg_rand() & 65535);
+					ilist.push_back(plf::rand() & 65535);
 				}
 
 
@@ -432,7 +432,7 @@ int main()
 
 				for (int i = 0; i != 5000; ++i)
 				{
-					sslist.push_back(plf::pcg_rand() & 65535);
+					sslist.push_back(plf::rand() & 65535);
 				}
 
 
@@ -467,7 +467,7 @@ int main()
 
 				for (int i = 0; i != 6000; ++i)
 				{
-					lslist.push_back(plf::pcg_rand() & 65535);
+					lslist.push_back(plf::rand() & 65535);
 				}
 
 
