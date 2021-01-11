@@ -69,23 +69,24 @@
 			#define PLF_INDSORT_TYPE_TRAITS_SUPPORT
 		#endif
 	#elif defined(__clang__) && !defined(__GLIBCXX__) && !defined(_LIBCPP_CXX03_LANG)
-		#if __has_feature(cxx_decltype)
-			#define PLF_INDSORT_DECLTYPE_SUPPORT
-		#endif
-		#if __has_feature(cxx_noexcept)
-			#define PLF_INDSORT_NOEXCEPT noexcept
-		#else
-			#define PLF_INDSORT_NOEXCEPT throw()
-		#endif
-		#if (__clang_major__ >= 3)
+		#if __clang_major__ >= 3 // clang versions < 3 don't support __has_feature() or traits
 			#define PLF_INDSORT_ALLOCATOR_TRAITS_SUPPORT
 			#define PLF_INDSORT_TYPE_TRAITS_SUPPORT
-		#endif
-		#if __has_feature(cxx_rvalue_references) && !defined(_LIBCPP_HAS_NO_RVALUE_REFERENCES)
-			#define PLF_INDSORT_MOVE_SEMANTICS_SUPPORT
-		#endif
-		#if __has_feature(cxx_variadic_templates) && !defined(_LIBCPP_HAS_NO_VARIADICS)
-			#define PLF_INDSORT_VARIADICS_SUPPORT
+	
+			#if __has_feature(cxx_decltype)
+				#define PLF_INDSORT_DECLTYPE_SUPPORT
+			#endif
+			#if __has_feature(cxx_noexcept)
+				#define PLF_INDSORT_NOEXCEPT noexcept
+			#else
+				#define PLF_INDSORT_NOEXCEPT throw()
+			#endif
+			#if __has_feature(cxx_rvalue_references) && !defined(_LIBCPP_HAS_NO_RVALUE_REFERENCES)
+				#define PLF_INDSORT_MOVE_SEMANTICS_SUPPORT
+			#endif
+			#if __has_feature(cxx_variadic_templates) && !defined(_LIBCPP_HAS_NO_VARIADICS)
+				#define PLF_INDSORT_VARIADICS_SUPPORT
+			#endif
 		#endif
 	#elif defined(__GLIBCXX__) // Using another compiler type with libstdc++ - we are assuming full c++11 compliance for compiler - which may not be true
 		#define PLF_INDSORT_DECLTYPE_SUPPORT
@@ -105,9 +106,12 @@
 		#if __GLIBCXX__ >= 20150422 // libstdc++ v4.9 and below do not support std::is_trivially_copyable
 			#define PLF_INDSORT_TYPE_TRAITS_SUPPORT
 		#endif
-	#elif (defined(_LIBCPP_CXX03_LANG) || defined(_LIBCPP_HAS_NO_RVALUE_REFERENCES) || defined(_LIBCPP_HAS_NO_VARIADICS)) // Special case for checking C++11 support with libCPP
+	#elif defined(_LIBCPP_CXX03_LANG) // Special case for checking C++11 support with libCPP
 		#define PLF_STACK_NOEXCEPT throw()
-	#else // Assume type traits and initializer support for other compilers and standard libraries
+		#if !defined(_LIBCPP_HAS_NO_VARIADICS)
+			#define PLF_INDSORT_VARIADICS_SUPPORT
+   	#endif
+	#else // Assume full support for other compilers and standard libraries
 		#define PLF_INDSORT_DECLTYPE_SUPPORT
 		#define PLF_INDSORT_INITIALIZER_LIST_SUPPORT
 		#define PLF_INDSORT_ALLOCATOR_TRAITS_SUPPORT
