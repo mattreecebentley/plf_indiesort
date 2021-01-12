@@ -17,8 +17,8 @@
 // 	misrepresented as being the original software.
 // 3. This notice may not be removed or altered from any source distribution.
 
-#ifndef PLF_INDSORT_H
-#define PLF_INDSORT_H
+#ifndef PLF_INDIESORT_H
+#define PLF_INDIESORT_H
 
 
 // Compiler-specific defines used by indiesort:
@@ -26,136 +26,136 @@
 
 #if defined(_MSC_VER)
 	#if _MSC_VER < 1900
-		#define PLF_INDSORT_NOEXCEPT throw()
+		#define PLF_NOEXCEPT throw()
 	#else
-		#define PLF_INDSORT_NOEXCEPT noexcept
+		#define PLF_NOEXCEPT noexcept
 	#endif
 
 	#if _MSC_VER >= 1600
-		#define PLF_INDSORT_DECLTYPE_SUPPORT
-		#define PLF_INDSORT_MOVE_SEMANTICS_SUPPORT
+		#define PLF_DECLTYPE_SUPPORT
+		#define PLF_MOVE_SEMANTICS_SUPPORT
 	#endif
 	#if _MSC_VER >= 1700
-		#define PLF_INDSORT_TYPE_TRAITS_SUPPORT
-		#define PLF_INDSORT_ALLOCATOR_TRAITS_SUPPORT
+		#define PLF_TYPE_TRAITS_SUPPORT
+		#define PLF_ALLOCATOR_TRAITS_SUPPORT
 	#endif
 	#if _MSC_VER >= 1800
-		#define PLF_INDSORT_VARIADICS_SUPPORT // Variadics, in this context, means both variadic templates and variadic macros are supported
+		#define PLF_VARIADICS_SUPPORT // Variadics, in this context, means both variadic templates and variadic macros are supported
 	#endif
 
 	#if defined(_MSVC_LANG) && (_MSVC_LANG >= 201703L)
-		#define PLF_INDSORT_CONSTEXPR constexpr
+		#define PLF_CONSTEXPR constexpr
 	#else
-		#define PLF_INDSORT_CONSTEXPR
+		#define PLF_CONSTEXPR
 	#endif
 
 #elif defined(__cplusplus) && __cplusplus >= 201103L // C++11 support, at least
-	#define PLF_INDSORT_MOVE_SEMANTICS_SUPPORT
+	#define PLF_MOVE_SEMANTICS_SUPPORT
 
 	#if defined(__GNUC__) && defined(__GNUC_MINOR__) && !defined(__clang__) // If compiler is GCC/G++
 		#if (__GNUC__ == 4 && __GNUC_MINOR__ >= 3) || __GNUC__ > 4 // 4.2 and below do not support variadic templates or decltype
-			#define PLF_INDSORT_VARIADICS_SUPPORT
-			#define PLF_INDSORT_DECLTYPE_SUPPORT
+			#define PLF_VARIADICS_SUPPORT
+			#define PLF_DECLTYPE_SUPPORT
 		#endif
 		#if (__GNUC__ == 4 && __GNUC_MINOR__ < 6) || __GNUC__ < 4
-			#define PLF_INDSORT_NOEXCEPT throw()
+			#define PLF_NOEXCEPT throw()
 		#else
-			#define PLF_INDSORT_NOEXCEPT noexcept
+			#define PLF_NOEXCEPT noexcept
 		#endif
 		#if (__GNUC__ == 4 && __GNUC_MINOR__ >= 7) || __GNUC__ > 4
-			#define PLF_INDSORT_ALLOCATOR_TRAITS_SUPPORT
+			#define PLF_ALLOCATOR_TRAITS_SUPPORT
 		#endif
 		#if __GNUC__ >= 5 // GCC v4.9 and below do not support std::is_trivially_copyable
-			#define PLF_INDSORT_TYPE_TRAITS_SUPPORT
+			#define PLF_TYPE_TRAITS_SUPPORT
 		#endif
 	#elif defined(__clang__) && !defined(__GLIBCXX__) && !defined(_LIBCPP_CXX03_LANG)
 		#if __clang_major__ >= 3 // clang versions < 3 don't support __has_feature() or traits
-			#define PLF_INDSORT_ALLOCATOR_TRAITS_SUPPORT
-			#define PLF_INDSORT_TYPE_TRAITS_SUPPORT
-	
+			#define PLF_ALLOCATOR_TRAITS_SUPPORT
+			#define PLF_TYPE_TRAITS_SUPPORT
+
 			#if __has_feature(cxx_decltype)
-				#define PLF_INDSORT_DECLTYPE_SUPPORT
+				#define PLF_DECLTYPE_SUPPORT
 			#endif
 			#if __has_feature(cxx_noexcept)
-				#define PLF_INDSORT_NOEXCEPT noexcept
+				#define PLF_NOEXCEPT noexcept
 			#else
-				#define PLF_INDSORT_NOEXCEPT throw()
+				#define PLF_NOEXCEPT throw()
 			#endif
 			#if __has_feature(cxx_rvalue_references) && !defined(_LIBCPP_HAS_NO_RVALUE_REFERENCES)
-				#define PLF_INDSORT_MOVE_SEMANTICS_SUPPORT
+				#define PLF_MOVE_SEMANTICS_SUPPORT
 			#endif
 			#if __has_feature(cxx_variadic_templates) && !defined(_LIBCPP_HAS_NO_VARIADICS)
-				#define PLF_INDSORT_VARIADICS_SUPPORT
+				#define PLF_VARIADICS_SUPPORT
 			#endif
 		#endif
 	#elif defined(__GLIBCXX__) // Using another compiler type with libstdc++ - we are assuming full c++11 compliance for compiler - which may not be true
-		#define PLF_INDSORT_DECLTYPE_SUPPORT
+		#define PLF_DECLTYPE_SUPPORT
 
 		#if __GLIBCXX__ >= 20080606 	// libstdc++ 4.2 and below do not support variadic templates
-			#define PLF_INDSORT_VARIADICS_SUPPORT
+			#define PLF_VARIADICS_SUPPORT
 		#endif
 		#if __GLIBCXX__ >= 20160111
-			#define PLF_INDSORT_ALLOCATOR_TRAITS_SUPPORT
-			#define PLF_INDSORT_NOEXCEPT noexcept
+			#define PLF_ALLOCATOR_TRAITS_SUPPORT
+			#define PLF_NOEXCEPT noexcept
 		#elif __GLIBCXX__ >= 20120322
-			#define PLF_INDSORT_ALLOCATOR_TRAITS_SUPPORT
-			#define PLF_INDSORT_NOEXCEPT noexcept
+			#define PLF_ALLOCATOR_TRAITS_SUPPORT
+			#define PLF_NOEXCEPT noexcept
 		#else
-			#define PLF_INDSORT_NOEXCEPT throw()
+			#define PLF_NOEXCEPT throw()
 		#endif
 		#if __GLIBCXX__ >= 20150422 // libstdc++ v4.9 and below do not support std::is_trivially_copyable
-			#define PLF_INDSORT_TYPE_TRAITS_SUPPORT
+			#define PLF_TYPE_TRAITS_SUPPORT
 		#endif
 	#elif defined(_LIBCPP_CXX03_LANG) // Special case for checking C++11 support with libCPP
 		#define PLF_STACK_NOEXCEPT throw()
 		#if !defined(_LIBCPP_HAS_NO_VARIADICS)
-			#define PLF_INDSORT_VARIADICS_SUPPORT
+			#define PLF_VARIADICS_SUPPORT
    	#endif
 	#else // Assume full support for other compilers and standard libraries
-		#define PLF_INDSORT_DECLTYPE_SUPPORT
-		#define PLF_INDSORT_INITIALIZER_LIST_SUPPORT
-		#define PLF_INDSORT_ALLOCATOR_TRAITS_SUPPORT
-		#define PLF_INDSORT_VARIADICS_SUPPORT
-		#define PLF_INDSORT_TYPE_TRAITS_SUPPORT
-		#define PLF_INDSORT_NOEXCEPT noexcept
+		#define PLF_DECLTYPE_SUPPORT
+		#define PLF_INITIALIZER_LIST_SUPPORT
+		#define PLF_ALLOCATOR_TRAITS_SUPPORT
+		#define PLF_VARIADICS_SUPPORT
+		#define PLF_TYPE_TRAITS_SUPPORT
+		#define PLF_NOEXCEPT noexcept
 	#endif
 
 	#if __cplusplus >= 201703L  &&   ((defined(__clang__) && ((__clang_major__ == 3 && __clang_minor__ == 9) || __clang_major__ > 3))   ||   (defined(__GNUC__) && __GNUC__ >= 7)   ||   (!defined(__clang__) && !defined(__GNUC__)))
-		#define PLF_INDSORT_CONSTEXPR constexpr
+		#define PLF_CONSTEXPR constexpr
 	#else
-		#define PLF_INDSORT_CONSTEXPR
+		#define PLF_CONSTEXPR
 	#endif
 #else
-	#define PLF_INDSORT_NOEXCEPT throw()
-	#define PLF_INDSORT_CONSTEXPR
+	#define PLF_NOEXCEPT throw()
+	#define PLF_CONSTEXPR
 #endif
 
 
 
 
-#ifdef PLF_INDSORT_ALLOCATOR_TRAITS_SUPPORT
-	#ifdef PLF_INDSORT_VARIADICS_SUPPORT
-		#define PLF_INDSORT_CONSTRUCT(the_allocator, allocator_instance, location, ...)	std::allocator_traits<the_allocator>::construct(allocator_instance, location, __VA_ARGS__)
+#ifdef PLF_ALLOCATOR_TRAITS_SUPPORT
+	#ifdef PLF_VARIADICS_SUPPORT
+		#define PLF_CONSTRUCT(the_allocator, allocator_instance, location, ...)	std::allocator_traits<the_allocator>::construct(allocator_instance, location, __VA_ARGS__)
 	#else
-		#define PLF_INDSORT_CONSTRUCT(the_allocator, allocator_instance, location, data) std::allocator_traits<the_allocator>::construct(allocator_instance, location, data)
+		#define PLF_CONSTRUCT(the_allocator, allocator_instance, location, data) std::allocator_traits<the_allocator>::construct(allocator_instance, location, data)
 	#endif
 
-	#define PLF_INDSORT_ALLOCATE(the_allocator, allocator_instance, size, hint) 		std::allocator_traits<the_allocator>::allocate(allocator_instance, size, hint)
-	#define PLF_INDSORT_DEALLOCATE(the_allocator, allocator_instance, location, size) 	std::allocator_traits<the_allocator>::deallocate(allocator_instance, location, size)
+	#define PLF_ALLOCATE(the_allocator, allocator_instance, size, hint) 		std::allocator_traits<the_allocator>::allocate(allocator_instance, size, hint)
+	#define PLF_DEALLOCATE(the_allocator, allocator_instance, location, size) 	std::allocator_traits<the_allocator>::deallocate(allocator_instance, location, size)
 #else
-	#ifdef PLF_INDSORT_VARIADICS_SUPPORT
-		#define PLF_INDSORT_CONSTRUCT(the_allocator, allocator_instance, location, ...)	allocator_instance.construct(location, __VA_ARGS__)
+	#ifdef PLF_VARIADICS_SUPPORT
+		#define PLF_CONSTRUCT(the_allocator, allocator_instance, location, ...)	allocator_instance.construct(location, __VA_ARGS__)
 	#else
-		#define PLF_INDSORT_CONSTRUCT(the_allocator, allocator_instance, location, data) allocator_instance.construct(location, data)
+		#define PLF_CONSTRUCT(the_allocator, allocator_instance, location, data) allocator_instance.construct(location, data)
 	#endif
 
-	#define PLF_INDSORT_ALLOCATE(the_allocator, allocator_instance, size, hint)	 		allocator_instance.allocate(size, hint)
-	#define PLF_INDSORT_DEALLOCATE(the_allocator, allocator_instance, location, size) 	allocator_instance.deallocate(location, size)
+	#define PLF_ALLOCATE(the_allocator, allocator_instance, size, hint)	 		allocator_instance.allocate(size, hint)
+	#define PLF_DEALLOCATE(the_allocator, allocator_instance, location, size) 	allocator_instance.deallocate(location, size)
 #endif
 
 
 
-#ifndef PLF_INDSORT_SORT_FUNCTION
+#ifndef PLF_SORT_FUNCTION
 	#include <algorithm> // std::sort
 #endif
 
@@ -165,12 +165,12 @@
 #include <limits>  // std::numeric_limits
 
 
-#ifdef PLF_INDSORT_TYPE_TRAITS_SUPPORT
+#ifdef PLF_TYPE_TRAITS_SUPPORT
 	#include <iterator> // std::iterator_traits
 	#include <type_traits> // is_same
 #endif
 
-#ifdef PLF_INDSORT_MOVE_SEMANTICS_SUPPORT
+#ifdef PLF_MOVE_SEMANTICS_SUPPORT
 	#include <utility> // std::move
 #endif
 
@@ -183,7 +183,7 @@ namespace plf
 	template <class element_type>
 	struct less
 	{
-		bool operator() (const element_type &a, const element_type &b) const PLF_INDSORT_NOEXCEPT
+		bool operator() (const element_type &a, const element_type &b) const PLF_NOEXCEPT
 		{
 			return a < b;
 		}
@@ -252,7 +252,7 @@ namespace plf
 			stored_first_iterator(first)
 		{}
 
-		random_access_sort_dereferencer() PLF_INDSORT_NOEXCEPT
+		random_access_sort_dereferencer() PLF_NOEXCEPT
 		{}
 
 		bool operator() (const size_type index1, const size_type index2)
@@ -270,21 +270,21 @@ namespace plf
 		typedef typename std::allocator<size_type> 																		size_type_allocator_type;
 
 		size_type_allocator_type size_type_allocator;
-		size_type * const sort_array = PLF_INDSORT_ALLOCATE(size_type_allocator_type, size_type_allocator, size, NULL);
+		size_type * const sort_array = PLF_ALLOCATE(size_type_allocator_type, size_type_allocator, size, NULL);
 		size_type *size_type_pointer = sort_array;
 
 		// Construct pointers to all elements in the sequence:
 		for (size_type index = 0; index != size; ++index, ++size_type_pointer)
 		{
-			PLF_INDSORT_CONSTRUCT(size_type_allocator_type, size_type_allocator, size_type_pointer, index);
+			PLF_CONSTRUCT(size_type_allocator_type, size_type_allocator, size_type_pointer, index);
 		}
 
 
 		// Now, sort the pointers by the values they point to (std::sort is default sort function if the macro below is not defined):
-		#ifndef PLF_INDSORT_SORT_FUNCTION
+		#ifndef PLF_SORT_FUNCTION
 			std::sort(sort_array, size_type_pointer, plf::random_access_sort_dereferencer<comparison_function, iterator_type, size_type>(compare, first));
 		#else
-			PLF_INDSORT_SORT_FUNCTION(sort_array, size_type_pointer, plf::random_access_sort_dereferencer<comparison_function, iterator_type, size_type>(compare, first));
+			PLF_SORT_FUNCTION(sort_array, size_type_pointer, plf::random_access_sort_dereferencer<comparison_function, iterator_type, size_type>(compare, first));
 		#endif
 
 
@@ -298,7 +298,7 @@ namespace plf
 			{
 				size_type destination_index = index;
 
-				#ifdef PLF_INDSORT_MOVE_SEMANTICS_SUPPORT
+				#ifdef PLF_MOVE_SEMANTICS_SUPPORT
 					element_type end_value = std::move(*(first + destination_index));
 				#else
 					element_type end_value = *(first + destination_index);
@@ -308,7 +308,7 @@ namespace plf
 
 				do
 				{
-					#ifdef PLF_INDSORT_MOVE_SEMANTICS_SUPPORT
+					#ifdef PLF_MOVE_SEMANTICS_SUPPORT
 						*(first + destination_index) = std::move(*(first + source_index));
 					#else
 						*(first + destination_index) = *(first + source_index);
@@ -319,7 +319,7 @@ namespace plf
 					sort_array[destination_index] = destination_index;
 				} while (source_index != index);
 
-				#ifdef PLF_INDSORT_MOVE_SEMANTICS_SUPPORT
+				#ifdef PLF_MOVE_SEMANTICS_SUPPORT
 					*(first + destination_index) = std::move(end_value);
 				#else
 					*(first + destination_index) = end_value;
@@ -327,7 +327,7 @@ namespace plf
 			}
 		}
 
-		PLF_INDSORT_DEALLOCATE(size_type_allocator_type, size_type_allocator, sort_array, size);
+		PLF_DEALLOCATE(size_type_allocator_type, size_type_allocator, sort_array, size);
 	}
 
 
@@ -371,7 +371,7 @@ namespace plf
 			stored_instance(function_instance)
 		{}
 
-		sort_dereferencer() PLF_INDSORT_NOEXCEPT
+		sort_dereferencer() PLF_NOEXCEPT
 		{}
 
 		bool operator() (const element_type first, const element_type second)
@@ -390,7 +390,7 @@ namespace plf
 		pointer original_location;
 		size_type original_index;
 
-		pointer_index_tuple(const pointer _item, const size_type _index) PLF_INDSORT_NOEXCEPT:
+		pointer_index_tuple(const pointer _item, const size_type _index) PLF_NOEXCEPT:
 			original_location(_item),
 			original_index(_index)
 		{}
@@ -413,7 +413,7 @@ namespace plf
 		typedef typename std::allocator<item_index_tuple> tuple_allocator_type;
 		tuple_allocator_type tuple_allocator;
 
-		item_index_tuple * const sort_array = PLF_INDSORT_ALLOCATE(tuple_allocator_type, tuple_allocator, size, NULL);
+		item_index_tuple * const sort_array = PLF_ALLOCATE(tuple_allocator_type, tuple_allocator, size, NULL);
 		item_index_tuple *tuple_pointer = sort_array;
 
 		// Construct pointers to all elements in the sequence:
@@ -421,19 +421,19 @@ namespace plf
 
 		for (iterator_type current_element = first; current_element != last; ++current_element, ++tuple_pointer, ++index)
 		{
-			#ifdef PLF_INDSORT_VARIADICS_SUPPORT
-				PLF_INDSORT_CONSTRUCT(tuple_allocator_type, tuple_allocator, tuple_pointer, &*current_element, index);
+			#ifdef PLF_VARIADICS_SUPPORT
+				PLF_CONSTRUCT(tuple_allocator_type, tuple_allocator, tuple_pointer, &*current_element, index);
 			#else
-				PLF_INDSORT_CONSTRUCT(tuple_allocator_type, tuple_allocator, tuple_pointer, item_index_tuple(&*current_element, index));
+				PLF_CONSTRUCT(tuple_allocator_type, tuple_allocator, tuple_pointer, item_index_tuple(&*current_element, index));
 			#endif
 		}
 
 
 		// Now, sort the pointers by the values they point to (std::sort is default sort function if the macro below is not defined):
-		#ifndef PLF_INDSORT_SORT_FUNCTION
+		#ifndef PLF_SORT_FUNCTION
 			std::sort(sort_array, sort_array + size, plf::sort_dereferencer<comparison_function, item_index_tuple>(compare));
 		#else
-			PLF_INDSORT_SORT_FUNCTION(sort_array, sort_array + size, plf::sort_dereferencer<comparison_function, item_index_tuple>(compare));
+			PLF_SORT_FUNCTION(sort_array, sort_array + size, plf::sort_dereferencer<comparison_function, item_index_tuple>(compare));
 		#endif
 
 
@@ -444,7 +444,7 @@ namespace plf
 		{
 			if (current_tuple->original_index != index)
 			{
-				#ifdef PLF_INDSORT_MOVE_SEMANTICS_SUPPORT
+				#ifdef PLF_MOVE_SEMANTICS_SUPPORT
 					element_type end_value = std::move(*(current_tuple->original_location));
 				#else
 					element_type end_value = *(current_tuple->original_location);
@@ -455,7 +455,7 @@ namespace plf
 
 				do
 				{
-					#ifdef PLF_INDSORT_MOVE_SEMANTICS_SUPPORT
+					#ifdef PLF_MOVE_SEMANTICS_SUPPORT
 						*(sort_array[destination_index].original_location) = std::move(*(sort_array[source_index].original_location));
 					#else
 						*(sort_array[destination_index].original_location) = *(sort_array[source_index].original_location);
@@ -466,7 +466,7 @@ namespace plf
 					sort_array[destination_index].original_index = destination_index;
 				} while (source_index != index);
 
-				#ifdef PLF_INDSORT_MOVE_SEMANTICS_SUPPORT
+				#ifdef PLF_MOVE_SEMANTICS_SUPPORT
 					*(sort_array[destination_index].original_location) = std::move(end_value);
 				#else
 					*(sort_array[destination_index].original_location) = end_value;
@@ -474,7 +474,7 @@ namespace plf
 			}
 		}
 
-		PLF_INDSORT_DEALLOCATE(tuple_allocator_type, tuple_allocator, sort_array, size);
+		PLF_DEALLOCATE(tuple_allocator_type, tuple_allocator, sort_array, size);
 	}
 
 
@@ -489,7 +489,7 @@ namespace plf
 
 
 	template <class iterator_type, class comparison_function>
-	#ifdef PLF_INDSORT_TYPE_TRAITS_SUPPORT
+	#ifdef PLF_TYPE_TRAITS_SUPPORT
 		inline void indiesort(const typename plf::enable_if_c<!(plf::is_pointer<iterator_type>::value || std::is_same<typename std::iterator_traits<iterator_type>::iterator_category, std::random_access_iterator_tag>::value), iterator_type>::type first, const iterator_type last, comparison_function compare)
 	#else
 		inline void indiesort(const typename plf::enable_if_c<!plf::is_pointer<iterator_type>::value, iterator_type>::type first, const iterator_type last, comparison_function compare)
@@ -503,7 +503,7 @@ namespace plf
 
 
 	template <class iterator_type, class comparison_function>
-	#ifdef PLF_INDSORT_TYPE_TRAITS_SUPPORT
+	#ifdef PLF_TYPE_TRAITS_SUPPORT
 		inline void indiesort(const typename plf::enable_if_c<(plf::is_pointer<iterator_type>::value || std::is_same<typename std::iterator_traits<iterator_type>::iterator_category, std::random_access_iterator_tag>::value), iterator_type>::type first, const iterator_type last, comparison_function compare)
 	#else
 		inline void indiesort(const typename plf::enable_if_c<plf::is_pointer<iterator_type>::value, iterator_type>::type first, const iterator_type last, comparison_function compare)
@@ -524,7 +524,7 @@ namespace plf
 
 	// Container-based templates:
 
-	#ifdef PLF_INDSORT_TYPE_TRAITS_SUPPORT
+	#ifdef PLF_TYPE_TRAITS_SUPPORT
 		template <class container_type, class comparison_function, typename plf::enable_if_c<std::is_same<typename std::iterator_traits<typename container_type::iterator>::iterator_category, std::random_access_iterator_tag>::value, container_type>::type * = nullptr>
 		inline void indiesort(container_type &container, comparison_function compare)
 		{
@@ -534,7 +534,7 @@ namespace plf
 
 
 
-	#ifdef PLF_INDSORT_DECLTYPE_SUPPORT
+	#ifdef PLF_DECLTYPE_SUPPORT
 		template <typename T>
 		class has_size_function
 		{
@@ -552,15 +552,15 @@ namespace plf
 
 
 
-	#ifdef PLF_INDSORT_TYPE_TRAITS_SUPPORT
+	#ifdef PLF_TYPE_TRAITS_SUPPORT
 		template <class container_type, class comparison_function, typename plf::enable_if_c<!std::is_same<typename std::iterator_traits<typename container_type::iterator>::iterator_category, std::random_access_iterator_tag>::value, container_type>::type * = nullptr>
 	#else
 		template <class container_type, class comparison_function>
 	#endif
 	inline void indiesort(container_type &container, comparison_function compare)
 	{
-		#ifdef PLF_INDSORT_DECLTYPE_SUPPORT
-			if PLF_INDSORT_CONSTEXPR (plf::has_size_function<container_type>::value)
+		#ifdef PLF_DECLTYPE_SUPPORT
+			if PLF_CONSTEXPR (plf::has_size_function<container_type>::value)
 			{
 				plf::non_random_access_sort(container.begin(), container.end(), compare, static_cast<std::size_t>(container.size()));
 			}
@@ -583,16 +583,16 @@ namespace plf
 
 }
 
-#undef PLF_INDSORT_DECLTYPE_SUPPORT
-#undef PLF_INDSORT_TYPE_TRAITS_SUPPORT
-#undef PLF_INDSORT_ALLOCATOR_TRAITS_SUPPORT
-#undef PLF_INDSORT_VARIADICS_SUPPORT
-#undef PLF_INDSORT_MOVE_SEMANTICS_SUPPORT
-#undef PLF_INDSORT_NOEXCEPT
-#undef PLF_INDSORT_CONSTEXPR
+#undef PLF_DECLTYPE_SUPPORT
+#undef PLF_TYPE_TRAITS_SUPPORT
+#undef PLF_ALLOCATOR_TRAITS_SUPPORT
+#undef PLF_VARIADICS_SUPPORT
+#undef PLF_MOVE_SEMANTICS_SUPPORT
+#undef PLF_NOEXCEPT
+#undef PLF_CONSTEXPR
 
-#undef PLF_INDSORT_CONSTRUCT
-#undef PLF_INDSORT_ALLOCATE
-#undef PLF_INDSORT_DEALLOCATE
+#undef PLF_CONSTRUCT
+#undef PLF_ALLOCATE
+#undef PLF_DEALLOCATE
 
-#endif // PLF_INDSORT_H
+#endif // PLF_INDIESORT_H
