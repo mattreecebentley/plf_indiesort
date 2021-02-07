@@ -81,8 +81,8 @@
 			#else
 				#define PLF_NOEXCEPT throw()
 			#endif
-			#if __has_feature(cxx_rvalue_references) && !defined(_LIBCPP_HAS_NO_RVALUE_REFERENCES)
-				#define PLF_MOVE_SEMANTICS_SUPPORT
+			#if (!__has_feature(cxx_rvalue_references)) || defined(_LIBCPP_HAS_NO_RVALUE_REFERENCES)
+				#undef PLF_MOVE_SEMANTICS_SUPPORT
 			#endif
 			#if __has_feature(cxx_variadic_templates) && !defined(_LIBCPP_HAS_NO_VARIADICS)
 				#define PLF_VARIADICS_SUPPORT
@@ -107,7 +107,7 @@
 			#define PLF_TYPE_TRAITS_SUPPORT
 		#endif
 	#elif defined(_LIBCPP_CXX03_LANG) // Special case for checking C++11 support with libCPP
-		#define PLF_STACK_NOEXCEPT throw()
+		#define PLF_NOEXCEPT throw()
 		#if !defined(_LIBCPP_HAS_NO_VARIADICS)
 			#define PLF_VARIADICS_SUPPORT
    	#endif
