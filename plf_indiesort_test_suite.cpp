@@ -1,9 +1,9 @@
-#if defined(_MSC_VER)
+#if defined(_MSC_VER) && !defined(__clang__) && !defined(__GNUC__)
 	#if _MSC_VER >= 1600
-		#define PLF__MOVE_SEMANTICS_SUPPORT
+		#define PLF_TEST_MOVE_SEMANTICS_SUPPORT
 	#endif
 #elif defined(__cplusplus) && __cplusplus >= 201103L // C++11 support, at least
-	#define PLF__MOVE_SEMANTICS_SUPPORT
+	#define PLF_TEST_MOVE_SEMANTICS_SUPPORT
 #endif
 
 
@@ -79,7 +79,7 @@ struct small_struct_non_trivial
 	small_struct_non_trivial(const small_struct_non_trivial &source) : number(source.number) {};
 	small_struct_non_trivial operator = (small_struct_non_trivial &source) { number = source.number; return *this; };
 
-	#ifdef PLF__MOVE_SEMANTICS_SUPPORT
+	#ifdef PLF_TEST_MOVE_SEMANTICS_SUPPORT
 		small_struct_non_trivial(small_struct_non_trivial &&source) : number(std::move(source.number)) {};
 		small_struct_non_trivial operator = (small_struct_non_trivial &&source) { number = std::move(source.number); return *this; };
 	#endif

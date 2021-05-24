@@ -24,7 +24,7 @@
 // Compiler-specific defines used by indiesort:
 
 
-#if defined(_MSC_VER)
+#if defined(_MSC_VER) && !defined(__clang__) && !defined(__GNUC__)
 	#if _MSC_VER < 1900
 		#define PLF_NOEXCEPT throw()
 	#else
@@ -48,6 +48,8 @@
 	#else
 		#define PLF_CONSTEXPR
 	#endif
+
+	#define PLF_CONSTFUNC
 
 #elif defined(__cplusplus) && __cplusplus >= 201103L // C++11 support, at least
 	#define PLF_MOVE_SEMANTICS_SUPPORT
@@ -81,8 +83,8 @@
 			#else
 				#define PLF_NOEXCEPT throw()
 			#endif
-			#if (!__has_feature(cxx_rvalue_references)) || defined(_LIBCPP_HAS_NO_RVALUE_REFERENCES)
-				#undef PLF_MOVE_SEMANTICS_SUPPORT
+			#if __has_feature(cxx_rvalue_references) && !defined(_LIBCPP_HAS_NO_RVALUE_REFERENCES)
+				#define PLF_MOVE_SEMANTICS_SUPPORT
 			#endif
 			#if __has_feature(cxx_variadic_templates) && !defined(_LIBCPP_HAS_NO_VARIADICS)
 				#define PLF_VARIADICS_SUPPORT
@@ -107,7 +109,7 @@
 			#define PLF_TYPE_TRAITS_SUPPORT
 		#endif
 	#elif defined(_LIBCPP_CXX03_LANG) // Special case for checking C++11 support with libCPP
-		#define PLF_NOEXCEPT throw()
+		#define PLF_STACK_NOEXCEPT throw()
 		#if !defined(_LIBCPP_HAS_NO_VARIADICS)
 			#define PLF_VARIADICS_SUPPORT
    	#endif
@@ -125,9 +127,16 @@
 	#else
 		#define PLF_CONSTEXPR
 	#endif
+
+	#if defined(PLF_LIBRARY_CONSTEXPR_FUNCTIONS) && __cplusplus > 201703L && ((defined(__clang__) && (__clang_major__ >= 10)) || (defined(__GNUC__) && __GNUC__ >= 10) || (!defined(__clang__) && !defined(__GNUC__)))
+		#define PLF_CONSTFUNC constexpr
+	#else
+		#define PLF_CONSTFUNC
+	#endif
 #else
 	#define PLF_NOEXCEPT throw()
 	#define PLF_CONSTEXPR
+	#define PLF_CONSTFUNC
 #endif
 
 
@@ -183,7 +192,7 @@ namespace plf
 	template <class element_type>
 	struct less
 	{
-		bool operator() (const element_type &a, const element_type &b) const PLF_NOEXCEPT
+		PLF_CONSTFUNC bool operator() (const element_type &a, const element_type &b) const PLF_NOEXCEPT
 		{
 			return a < b;
 		}
@@ -247,15 +256,12 @@ namespace plf
 		comparison_function stored_instance;
 		const iterator_type stored_first_iterator;
 
-		explicit random_access_sort_dereferencer(const comparison_function &function_instance, const iterator_type first):
+		PLF_CONSTFUNC explicit random_access_sort_dereferencer(const comparison_function &function_instance, const iterator_type first):
 			stored_instance(function_instance),
 			stored_first_iterator(first)
 		{}
 
-		random_access_sort_dereferencer() PLF_NOEXCEPT
-		{}
-
-		bool operator() (const size_type index1, const size_type index2)
+		PLF_CONSTFUNC bool operator() (const size_type index1, const size_type index2)
 		{
 			return stored_instance(*(stored_first_iterator + index1), *(stored_first_iterator + index2));
 		}
@@ -264,7 +270,7 @@ namespace plf
 
 
 	template <class iterator_type, class comparison_function, typename size_type>
-	void random_access_sort(const iterator_type first, comparison_function compare, const size_type size)
+	PLF_CONSTFUNC void random_access_sort(const iterator_type first, comparison_function compare, const size_type size)
 	{
 		typedef typename plf::derive_type<plf::is_pointer<iterator_type>::value, iterator_type>::type	element_type;
 		typedef typename std::allocator<size_type> 																		size_type_allocator_type;
@@ -333,7 +339,7 @@ namespace plf
 
 
 	template <class iterator_type, class comparison_function>
-	void call_random_access_sort(const iterator_type first, const iterator_type last, comparison_function compare)
+	PLF_CONSTFUNC void call_random_access_sort(const iterator_type first, const iterator_type last, comparison_function compare)
 	{
 		assert(first <= last);
 		const std::size_t size = static_cast<std::size_t>(last - first);
@@ -367,14 +373,11 @@ namespace plf
 	{
 		comparison_function stored_instance;
 
-		explicit sort_dereferencer(const comparison_function &function_instance):
+		PLF_CONSTFUNC explicit sort_dereferencer(const comparison_function &function_instance):
 			stored_instance(function_instance)
 		{}
 
-		sort_dereferencer() PLF_NOEXCEPT
-		{}
-
-		bool operator() (const element_type first, const element_type second)
+		PLF_CONSTFUNC bool operator() (const element_type first, const element_type second)
 		{
 			return stored_instance(*(first.original_location), *(second.original_location));
 		}
@@ -390,7 +393,7 @@ namespace plf
 		pointer original_location;
 		size_type original_index;
 
-		pointer_index_tuple(const pointer _item, const size_type _index) PLF_NOEXCEPT:
+		PLF_CONSTFUNC pointer_index_tuple(const pointer _item, const size_type _index) PLF_NOEXCEPT:
 			original_location(_item),
 			original_index(_index)
 		{}
@@ -399,7 +402,7 @@ namespace plf
 
 
 	template <class iterator_type, class comparison_function>
-	void non_random_access_sort(const iterator_type first, const iterator_type last, comparison_function compare, const std::size_t size)
+	PLF_CONSTFUNC void non_random_access_sort(const iterator_type first, const iterator_type last, comparison_function compare, const std::size_t size)
 	{
 		if (size < 2)
 		{
@@ -481,7 +484,7 @@ namespace plf
 
 	// Range templates:
 	template <class iterator_type, class comparison_function>
-	inline void indiesort(const iterator_type first, const iterator_type last, comparison_function compare, const std::size_t size)
+	PLF_CONSTFUNC inline void indiesort(const iterator_type first, const iterator_type last, comparison_function compare, const std::size_t size)
 	{
 		plf::non_random_access_sort(first, last, compare, size);
 	}
@@ -490,9 +493,9 @@ namespace plf
 
 	template <class iterator_type, class comparison_function>
 	#ifdef PLF_TYPE_TRAITS_SUPPORT
-		inline void indiesort(const typename plf::enable_if_c<!(plf::is_pointer<iterator_type>::value || std::is_same<typename std::iterator_traits<iterator_type>::iterator_category, std::random_access_iterator_tag>::value), iterator_type>::type first, const iterator_type last, comparison_function compare)
+		PLF_CONSTFUNC inline void indiesort(const typename plf::enable_if_c<!(plf::is_pointer<iterator_type>::value || std::is_same<typename std::iterator_traits<iterator_type>::iterator_category, std::random_access_iterator_tag>::value), iterator_type>::type first, const iterator_type last, comparison_function compare)
 	#else
-		inline void indiesort(const typename plf::enable_if_c<!plf::is_pointer<iterator_type>::value, iterator_type>::type first, const iterator_type last, comparison_function compare)
+		PLF_CONSTFUNC inline void indiesort(const typename plf::enable_if_c<!plf::is_pointer<iterator_type>::value, iterator_type>::type first, const iterator_type last, comparison_function compare)
 	#endif
 	{
 		std::size_t size = 0;
@@ -504,9 +507,9 @@ namespace plf
 
 	template <class iterator_type, class comparison_function>
 	#ifdef PLF_TYPE_TRAITS_SUPPORT
-		inline void indiesort(const typename plf::enable_if_c<(plf::is_pointer<iterator_type>::value || std::is_same<typename std::iterator_traits<iterator_type>::iterator_category, std::random_access_iterator_tag>::value), iterator_type>::type first, const iterator_type last, comparison_function compare)
+		PLF_CONSTFUNC inline void indiesort(const typename plf::enable_if_c<(plf::is_pointer<iterator_type>::value || std::is_same<typename std::iterator_traits<iterator_type>::iterator_category, std::random_access_iterator_tag>::value), iterator_type>::type first, const iterator_type last, comparison_function compare)
 	#else
-		inline void indiesort(const typename plf::enable_if_c<plf::is_pointer<iterator_type>::value, iterator_type>::type first, const iterator_type last, comparison_function compare)
+		PLF_CONSTFUNC inline void indiesort(const typename plf::enable_if_c<plf::is_pointer<iterator_type>::value, iterator_type>::type first, const iterator_type last, comparison_function compare)
 	#endif
 	{
 		plf::call_random_access_sort(first, last, compare);
@@ -515,7 +518,7 @@ namespace plf
 
 
 	template <class iterator_type>
-	inline void indiesort(const iterator_type first, const iterator_type last)
+	PLF_CONSTFUNC inline void indiesort(const iterator_type first, const iterator_type last)
 	{
 		indiesort(first, last, plf::less<typename plf::derive_type<plf::is_pointer<iterator_type>::value, iterator_type>::type>());
 	}
@@ -526,7 +529,7 @@ namespace plf
 
 	#ifdef PLF_TYPE_TRAITS_SUPPORT
 		template <class container_type, class comparison_function, typename plf::enable_if_c<std::is_same<typename std::iterator_traits<typename container_type::iterator>::iterator_category, std::random_access_iterator_tag>::value, container_type>::type * = nullptr>
-		inline void indiesort(container_type &container, comparison_function compare)
+		PLF_CONSTFUNC inline void indiesort(container_type &container, comparison_function compare)
 		{
 			plf::call_random_access_sort(container.begin(), container.end(), compare);
 		}
@@ -542,8 +545,8 @@ namespace plf
 				typedef char one;
 				struct two { char x[2]; };
 
-				template <typename C> static one test( decltype(&C::size) ) ;
-				template <typename C> static two test(...);
+				template <typename C> PLF_CONSTFUNC static one test( decltype(&C::size) ) ;
+				template <typename C> PLF_CONSTFUNC static two test(...);
 
 			public:
 				enum { value = sizeof(test<T>(0)) == sizeof(char) };
@@ -557,7 +560,7 @@ namespace plf
 	#else
 		template <class container_type, class comparison_function>
 	#endif
-	inline void indiesort(container_type &container, comparison_function compare)
+	PLF_CONSTFUNC inline void indiesort(container_type &container, comparison_function compare)
 	{
 		#ifdef PLF_DECLTYPE_SUPPORT
 			if PLF_CONSTEXPR (plf::has_size_function<container_type>::value)
@@ -574,7 +577,7 @@ namespace plf
 
 
 	template <class container_type>
-	inline void indiesort(container_type &container)
+	PLF_CONSTFUNC inline void indiesort(container_type &container)
 	{
 		indiesort(container, plf::less<typename container_type::value_type>());
 	}
