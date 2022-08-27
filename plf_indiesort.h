@@ -1,4 +1,4 @@
-// Copyright (c) 2021, Matthew Bentley (mattreecebentley@gmail.com) www.plflib.org
+// Copyright (c) 2022, Matthew Bentley (mattreecebentley@gmail.com) www.plflib.org
 
 // zLib license (https://www.zlib.net/zlib_license.html):
 // This software is provided 'as-is', without any express or implied
@@ -23,14 +23,12 @@
 
 // Compiler-specific defines used by indiesort:
 
+// Define default cases before possibly redefining:
+#define PLF_CONSTFUNC
+#define PLF_NOEXCEPT throw()
+#define PLF_CONSTEXPR
 
 #if defined(_MSC_VER) && !defined(__clang__) && !defined(__GNUC__)
-	#if _MSC_VER < 1900
-		#define PLF_NOEXCEPT throw()
-	#else
-		#define PLF_NOEXCEPT noexcept
-	#endif
-
 	#if _MSC_VER >= 1600
 		#define PLF_DECLTYPE_SUPPORT
 		#define PLF_MOVE_SEMANTICS_SUPPORT
@@ -42,14 +40,20 @@
 	#if _MSC_VER >= 1800
 		#define PLF_VARIADICS_SUPPORT // Variadics, in this context, means both variadic templates and variadic macros are supported
 	#endif
-
-	#if defined(_MSVC_LANG) && (_MSVC_LANG >= 201703L)
-		#define PLF_CONSTEXPR constexpr
-	#else
-		#define PLF_CONSTEXPR
+	#if _MSC_VER >= 1900
+		#undef PLF_NOEXCEPT
+		#define PLF_NOEXCEPT noexcept
 	#endif
 
-	#define PLF_CONSTFUNC
+	#if defined(_MSVC_LANG) && (_MSVC_LANG >= 201703L)
+		#undef PLF_CONSTEXPR
+		#define PLF_CONSTEXPR constexpr
+	#endif
+
+	#if defined(_MSVC_LANG) && (_MSVC_LANG >= 202002L) && _MSC_VER >= 1929
+		#undef PLF_CONSTFUNC
+		#define PLF_CONSTFUNC constexpr
+	#endif
 
 #elif defined(__cplusplus) && __cplusplus >= 201103L // C++11 support, at least
 	#define PLF_MOVE_SEMANTICS_SUPPORT
@@ -59,9 +63,8 @@
 			#define PLF_VARIADICS_SUPPORT
 			#define PLF_DECLTYPE_SUPPORT
 		#endif
-		#if (__GNUC__ == 4 && __GNUC_MINOR__ < 6) || __GNUC__ < 4
-			#define PLF_NOEXCEPT throw()
-		#else
+		#if (__GNUC__ == 4 && __GNUC_MINOR__ >= 6) || __GNUC__ > 4
+			#undef PLF_NOEXCEPT
 			#define PLF_NOEXCEPT noexcept
 		#endif
 		#if (__GNUC__ == 4 && __GNUC_MINOR__ >= 7) || __GNUC__ > 4
@@ -79,9 +82,8 @@
 				#define PLF_DECLTYPE_SUPPORT
 			#endif
 			#if __has_feature(cxx_noexcept)
+				#undef PLF_NOEXCEPT
 				#define PLF_NOEXCEPT noexcept
-			#else
-				#define PLF_NOEXCEPT throw()
 			#endif
 			#if __has_feature(cxx_rvalue_references) && !defined(_LIBCPP_HAS_NO_RVALUE_REFERENCES)
 				#define PLF_MOVE_SEMANTICS_SUPPORT
@@ -96,20 +98,15 @@
 		#if __GLIBCXX__ >= 20080606 	// libstdc++ 4.2 and below do not support variadic templates
 			#define PLF_VARIADICS_SUPPORT
 		#endif
-		#if __GLIBCXX__ >= 20160111
+		#if __GLIBCXX__ >= 20120322
 			#define PLF_ALLOCATOR_TRAITS_SUPPORT
+			#undef PLF_NOEXCEPT
 			#define PLF_NOEXCEPT noexcept
-		#elif __GLIBCXX__ >= 20120322
-			#define PLF_ALLOCATOR_TRAITS_SUPPORT
-			#define PLF_NOEXCEPT noexcept
-		#else
-			#define PLF_NOEXCEPT throw()
 		#endif
 		#if __GLIBCXX__ >= 20150422 // libstdc++ v4.9 and below do not support std::is_trivially_copyable
 			#define PLF_TYPE_TRAITS_SUPPORT
 		#endif
 	#elif defined(_LIBCPP_CXX03_LANG) // Special case for checking C++11 support with libCPP
-		#define PLF_STACK_NOEXCEPT throw()
 		#if !defined(_LIBCPP_HAS_NO_VARIADICS)
 			#define PLF_VARIADICS_SUPPORT
    	#endif
@@ -119,24 +116,19 @@
 		#define PLF_ALLOCATOR_TRAITS_SUPPORT
 		#define PLF_VARIADICS_SUPPORT
 		#define PLF_TYPE_TRAITS_SUPPORT
+		#undef PLF_NOEXCEPT
 		#define PLF_NOEXCEPT noexcept
 	#endif
 
 	#if __cplusplus >= 201703L  &&   ((defined(__clang__) && ((__clang_major__ == 3 && __clang_minor__ == 9) || __clang_major__ > 3))   ||   (defined(__GNUC__) && __GNUC__ >= 7)   ||   (!defined(__clang__) && !defined(__GNUC__)))
+		#undef PLF_CONSTEXPR
 		#define PLF_CONSTEXPR constexpr
-	#else
-		#define PLF_CONSTEXPR
 	#endif
 
 	#if defined(PLF_LIBRARY_CONSTEXPR_FUNCTIONS) && __cplusplus > 201703L && ((defined(__clang__) && (__clang_major__ >= 10)) || (defined(__GNUC__) && __GNUC__ >= 10) || (!defined(__clang__) && !defined(__GNUC__)))
+		#undef PLF_CONSTFUNC
 		#define PLF_CONSTFUNC constexpr
-	#else
-		#define PLF_CONSTFUNC
 	#endif
-#else
-	#define PLF_NOEXCEPT throw()
-	#define PLF_CONSTEXPR
-	#define PLF_CONSTFUNC
 #endif
 
 
@@ -187,29 +179,47 @@
 
 namespace plf
 {
-	// C++11-like functions/structs etc for C++03/98 compatibility:
+	// std:: tool replacements for C++03/98 support:
 
-	template <class element_type>
-	struct less
-	{
-		PLF_CONSTFUNC bool operator() (const element_type &a, const element_type &b) const PLF_NOEXCEPT
-		{
-			return a < b;
-		}
-	};
-
-
+#ifndef PLF_TOOLS
+	#define PLF_TOOLS
 
 	template <bool condition, class T = void>
-	struct enable_if_c
+	struct enable_if
 	{
 		typedef T type;
 	};
 
 	template <class T>
-	struct enable_if_c<false, T>
+	struct enable_if<false, T>
 	{};
 
+
+
+	template <bool flag, class is_true, class is_false> struct conditional;
+
+	template <class is_true, class is_false> struct conditional<true, is_true, is_false>
+	{
+		typedef is_true type;
+	};
+
+	template <class is_true, class is_false> struct conditional<false, is_true, is_false>
+	{
+		typedef is_false type;
+	};
+
+
+
+	template <class element_type>
+	struct less
+	{
+		bool operator() (const element_type &a, const element_type &b) const PLF_NOEXCEPT
+		{
+			return a < b;
+		}
+	};
+
+#endif
 
 
 	template <typename T>
@@ -484,7 +494,7 @@ namespace plf
 
 	// Range templates:
 	template <class iterator_type, class comparison_function>
-	PLF_CONSTFUNC inline void indiesort(const iterator_type first, const iterator_type last, comparison_function compare, const std::size_t size)
+	PLF_CONSTFUNC void indiesort(const iterator_type first, const iterator_type last, comparison_function compare, const std::size_t size)
 	{
 		plf::non_random_access_sort(first, last, compare, size);
 	}
@@ -493,9 +503,9 @@ namespace plf
 
 	template <class iterator_type, class comparison_function>
 	#ifdef PLF_TYPE_TRAITS_SUPPORT
-		PLF_CONSTFUNC inline void indiesort(const typename plf::enable_if_c<!(plf::is_pointer<iterator_type>::value || std::is_same<typename std::iterator_traits<iterator_type>::iterator_category, std::random_access_iterator_tag>::value), iterator_type>::type first, const iterator_type last, comparison_function compare)
+		PLF_CONSTFUNC void indiesort(const typename plf::enable_if<!(plf::is_pointer<iterator_type>::value || std::is_same<typename std::iterator_traits<iterator_type>::iterator_category, std::random_access_iterator_tag>::value), iterator_type>::type first, const iterator_type last, comparison_function compare)
 	#else
-		PLF_CONSTFUNC inline void indiesort(const typename plf::enable_if_c<!plf::is_pointer<iterator_type>::value, iterator_type>::type first, const iterator_type last, comparison_function compare)
+		PLF_CONSTFUNC void indiesort(const typename plf::enable_if<!plf::is_pointer<iterator_type>::value, iterator_type>::type first, const iterator_type last, comparison_function compare)
 	#endif
 	{
 		std::size_t size = 0;
@@ -507,9 +517,9 @@ namespace plf
 
 	template <class iterator_type, class comparison_function>
 	#ifdef PLF_TYPE_TRAITS_SUPPORT
-		PLF_CONSTFUNC inline void indiesort(const typename plf::enable_if_c<(plf::is_pointer<iterator_type>::value || std::is_same<typename std::iterator_traits<iterator_type>::iterator_category, std::random_access_iterator_tag>::value), iterator_type>::type first, const iterator_type last, comparison_function compare)
+		PLF_CONSTFUNC void indiesort(const typename plf::enable_if<(plf::is_pointer<iterator_type>::value || std::is_same<typename std::iterator_traits<iterator_type>::iterator_category, std::random_access_iterator_tag>::value), iterator_type>::type first, const iterator_type last, comparison_function compare)
 	#else
-		PLF_CONSTFUNC inline void indiesort(const typename plf::enable_if_c<plf::is_pointer<iterator_type>::value, iterator_type>::type first, const iterator_type last, comparison_function compare)
+		PLF_CONSTFUNC void indiesort(const typename plf::enable_if<plf::is_pointer<iterator_type>::value, iterator_type>::type first, const iterator_type last, comparison_function compare)
 	#endif
 	{
 		plf::call_random_access_sort(first, last, compare);
@@ -518,7 +528,7 @@ namespace plf
 
 
 	template <class iterator_type>
-	PLF_CONSTFUNC inline void indiesort(const iterator_type first, const iterator_type last)
+	PLF_CONSTFUNC void indiesort(const iterator_type first, const iterator_type last)
 	{
 		indiesort(first, last, plf::less<typename plf::derive_type<plf::is_pointer<iterator_type>::value, iterator_type>::type>());
 	}
@@ -528,8 +538,8 @@ namespace plf
 	// Container-based templates:
 
 	#ifdef PLF_TYPE_TRAITS_SUPPORT
-		template <class container_type, class comparison_function, typename plf::enable_if_c<std::is_same<typename std::iterator_traits<typename container_type::iterator>::iterator_category, std::random_access_iterator_tag>::value, container_type>::type * = nullptr>
-		PLF_CONSTFUNC inline void indiesort(container_type &container, comparison_function compare)
+		template <class container_type, class comparison_function, typename plf::enable_if<std::is_same<typename std::iterator_traits<typename container_type::iterator>::iterator_category, std::random_access_iterator_tag>::value, container_type>::type * = nullptr>
+		PLF_CONSTFUNC void indiesort(container_type &container, comparison_function compare)
 		{
 			plf::call_random_access_sort(container.begin(), container.end(), compare);
 		}
@@ -556,11 +566,11 @@ namespace plf
 
 
 	#ifdef PLF_TYPE_TRAITS_SUPPORT
-		template <class container_type, class comparison_function, typename plf::enable_if_c<!std::is_same<typename std::iterator_traits<typename container_type::iterator>::iterator_category, std::random_access_iterator_tag>::value, container_type>::type * = nullptr>
+		template <class container_type, class comparison_function, typename plf::enable_if<!std::is_same<typename std::iterator_traits<typename container_type::iterator>::iterator_category, std::random_access_iterator_tag>::value, container_type>::type * = nullptr>
 	#else
 		template <class container_type, class comparison_function>
 	#endif
-	PLF_CONSTFUNC inline void indiesort(container_type &container, comparison_function compare)
+	PLF_CONSTFUNC void indiesort(container_type &container, comparison_function compare)
 	{
 		#ifdef PLF_DECLTYPE_SUPPORT
 			if PLF_CONSTEXPR (plf::has_size_function<container_type>::value)
@@ -569,7 +579,7 @@ namespace plf
 			}
 			else
 		#endif
-		{  // If no decltype support, assume container has .size()
+		{  // If no decltype support, assume container doesn't have size()
 			indiesort(container.begin(), container.end(), compare); // call range indiesort
 		}
 	}
@@ -577,7 +587,7 @@ namespace plf
 
 
 	template <class container_type>
-	PLF_CONSTFUNC inline void indiesort(container_type &container)
+	PLF_CONSTFUNC void indiesort(container_type &container)
 	{
 		indiesort(container, plf::less<typename container_type::value_type>());
 	}
