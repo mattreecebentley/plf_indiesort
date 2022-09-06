@@ -219,6 +219,43 @@ namespace plf
 		}
 	};
 
+
+
+	template<class element_type>
+	struct eq_to
+	{
+		const element_type value;
+
+		explicit eq_to(const element_type store_value): // no noexcept as element may allocate and potentially throw when copied
+			value(store_value)
+		{}
+
+		bool operator() (const element_type compare_value) const PLF_NOEXCEPT
+		{
+			return value == compare_value;
+		}
+	};
+	
+
+
+	// To enable conversion when allocator supplies non-raw pointers:
+	template <class destination_pointer_type, class source_pointer_type>
+	static PLF_CONSTFUNC destination_pointer_type convert_pointer(const source_pointer_type source_pointer) PLF_NOEXCEPT
+	{
+		#if defined(PLF_TYPE_TRAITS_SUPPORT) && defined(PLF_CPP20_SUPPORT) // constexpr necessary to avoid a branch for every call
+			if constexpr (std::is_trivial<destination_pointer_type>::value && std::is_trivial<source_pointer_type>::value)
+			{
+				return std::bit_cast<destination_pointer_type>(source_pointer);
+			}
+			else
+			{
+				return destination_pointer_type(std::to_address(source_pointer));
+			}
+		#else
+			return destination_pointer_type(&*source_pointer);
+		#endif
+	}
+
 #endif
 
 
