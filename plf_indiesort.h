@@ -1,3 +1,4 @@
+
 // Copyright (c) 2023, Matthew Bentley (mattreecebentley@gmail.com) www.plflib.org
 
 // zLib license (https://www.zlib.net/zlib_license.html):
@@ -125,7 +126,7 @@
 		#define PLF_CONSTEXPR constexpr
 	#endif
 
-	#if defined(PLF_LIBRARY_CONSTEXPR_FUNCTIONS) && __cplusplus > 201703L && ((defined(__clang__) && (__clang_major__ >= 10)) || (defined(__GNUC__) && __GNUC__ >= 10) || (!defined(__clang__) && !defined(__GNUC__)))
+	#if __cplusplus > 201704L && ((((defined(__clang__) && !defined(__APPLE_CC__) && __clang_major__ >= 14) || (defined(__GNUC__) && (__GNUC__ > 11 || (__GNUC__ == 11 && __GNUC_MINOR__ > 0)))) && ((defined(_LIBCPP_VERSION) && _LIBCPP_VERSION >= 14) || (defined(__GLIBCXX__) && __GLIBCXX__ >= 201806L))) || (!defined(__clang__) && !defined(__GNUC__)))
 		#undef PLF_CONSTFUNC
 		#define PLF_CONSTFUNC constexpr
 	#endif
