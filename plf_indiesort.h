@@ -1,4 +1,3 @@
-
 // Copyright (c) 2023, Matthew Bentley (mattreecebentley@gmail.com) www.plflib.org
 
 // zLib license (https://www.zlib.net/zlib_license.html):
@@ -239,21 +238,14 @@ namespace plf
 	
 
 
-	// To enable conversion when allocator supplies non-raw pointers:
-	template <class destination_pointer_type, class source_pointer_type>
-	static PLF_CONSTFUNC destination_pointer_type convert_pointer(const source_pointer_type source_pointer) PLF_NOEXCEPT
+	// To enable conversion to void * when allocator supplies non-raw pointers:
+	template <class source_pointer_type>
+	static PLF_CONSTFUNC void * convert_to_void(const source_pointer_type source_pointer) PLF_NOEXCEPT
 	{
-		#if defined(PLF_TYPE_TRAITS_SUPPORT) && defined(PLF_CPP20_SUPPORT) // constexpr necessary to avoid a branch for every call
-			if constexpr (std::is_trivial<destination_pointer_type>::value && std::is_trivial<source_pointer_type>::value)
-			{
-				return std::bit_cast<destination_pointer_type>(source_pointer);
-			}
-			else
-			{
-				return destination_pointer_type(std::to_address(source_pointer));
-			}
+		#if defined(PLF_CPP20_SUPPORT)
+			return static_cast<void *>(std::to_address(source_pointer));
 		#else
-			return destination_pointer_type(&*source_pointer);
+			return static_cast<void *>(&*source_pointer);
 		#endif
 	}
 
