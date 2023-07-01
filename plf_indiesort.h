@@ -163,7 +163,7 @@
 
 #include <cassert>	// assert
 #include <cstddef> // std::size_t
-#include <memory>	// std::allocator
+#include <memory>	// std::allocator, std::to_address
 #include <limits>  // std::numeric_limits
 
 
@@ -176,9 +176,6 @@
 	#include <utility> // std::move
 #endif
 
-#ifdef PLF_CPP20_SUPPORT
-	#include <compare> // std::to_address
-#endif
 
 
 namespace plf
