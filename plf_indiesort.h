@@ -29,6 +29,10 @@
 #define PLF_CONSTEXPR
 
 #if defined(_MSC_VER) && !defined(__clang__) && !defined(__GNUC__)
+    // Suppress incorrect (unfixed MSVC bug) warnings re: constant expressions in constexpr-if statements
+	#pragma warning ( push )
+    #pragma warning ( disable : 4127 )
+
 	#if _MSC_VER >= 1600
 		#define PLF_DECLTYPE_SUPPORT
 		#define PLF_MOVE_SEMANTICS_SUPPORT
@@ -648,5 +652,9 @@ namespace plf
 #undef PLF_CONSTRUCT
 #undef PLF_ALLOCATE
 #undef PLF_DEALLOCATE
+
+#if defined(_MSC_VER) && !defined(__clang__) && !defined(__GNUC__)
+	#pragma warning ( pop )
+#endif
 
 #endif // PLF_INDIESORT_H
