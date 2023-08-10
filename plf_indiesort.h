@@ -141,38 +141,42 @@
 
 #ifdef PLF_ALLOCATOR_TRAITS_SUPPORT
 	#ifdef PLF_VARIADICS_SUPPORT
-		#define PLF_CONSTRUCT(the_allocator, allocator_instance, location, ...)	std::allocator_traits<the_allocator>::construct(allocator_instance, location, __VA_ARGS__)
+		#define PLF_CONSTRUCT(the_allocator, allocator_instance, location, ...) std::allocator_traits<the_allocator>::construct(allocator_instance, location, __VA_ARGS__)
 	#else
-		#define PLF_CONSTRUCT(the_allocator, allocator_instance, location, data) std::allocator_traits<the_allocator>::construct(allocator_instance, location, data)
+		#define PLF_CONSTRUCT(the_allocator, allocator_instance, location, data)	std::allocator_traits<the_allocator>::construct(allocator_instance, location, data)
 	#endif
 
-	#define PLF_ALLOCATE(the_allocator, allocator_instance, size, hint) 		std::allocator_traits<the_allocator>::allocate(allocator_instance, size, hint)
-	#define PLF_DEALLOCATE(the_allocator, allocator_instance, location, size) 	std::allocator_traits<the_allocator>::deallocate(allocator_instance, location, size)
+	#define PLF_DESTROY(the_allocator, allocator_instance, location)				std::allocator_traits<the_allocator>::destroy(allocator_instance, location)
+	#define PLF_ALLOCATE(the_allocator, allocator_instance, size, hint)			std::allocator_traits<the_allocator>::allocate(allocator_instance, size, hint)
+	#define PLF_DEALLOCATE(the_allocator, allocator_instance, location, size)	std::allocator_traits<the_allocator>::deallocate(allocator_instance, location, size)
 #else
 	#ifdef PLF_VARIADICS_SUPPORT
-		#define PLF_CONSTRUCT(the_allocator, allocator_instance, location, ...)	allocator_instance.construct(location, __VA_ARGS__)
+		#define PLF_CONSTRUCT(the_allocator, allocator_instance, location, ...) 	(allocator_instance).construct(location, __VA_ARGS__)
 	#else
-		#define PLF_CONSTRUCT(the_allocator, allocator_instance, location, data) allocator_instance.construct(location, data)
+		#define PLF_CONSTRUCT(the_allocator, allocator_instance, location, data)	(allocator_instance).construct(location, data)
 	#endif
 
-	#define PLF_ALLOCATE(the_allocator, allocator_instance, size, hint)	 		allocator_instance.allocate(size, hint)
-	#define PLF_DEALLOCATE(the_allocator, allocator_instance, location, size) 	allocator_instance.deallocate(location, size)
+	#define PLF_DESTROY(the_allocator, allocator_instance, location)				(allocator_instance).destroy(location)
+	#define PLF_ALLOCATE(the_allocator, allocator_instance, size, hint)			(allocator_instance).allocate(size, hint)
+	#define PLF_DEALLOCATE(the_allocator, allocator_instance, location, size)	(allocator_instance).deallocate(location, size)
 #endif
 
 
 
 #ifndef PLF_SORT_FUNCTION
 	#include <algorithm> // std::sort
+	#define PLF_SORT_FUNCTION std::sort
+	#define PLF_SORT_FUNCTION_DEFINED
 #endif
 
 #include <cassert>	// assert
 #include <cstddef> // std::size_t
 #include <memory>	// std::allocator, std::to_address
 #include <limits>  // std::numeric_limits
+#include <iterator> // std::iterator_traits, std::move_iterator, std::distance
 
 
 #ifdef PLF_TYPE_TRAITS_SUPPORT
-	#include <iterator> // std::iterator_traits, std::move_iterator
 	#include <type_traits> // is_same
 #endif
 
@@ -263,6 +267,10 @@ namespace plf
 			return std::move_iterator<iterator_type>(std::move(it));
 		}
 	#endif
+
+
+
+	enum priority { performance = 1, memory_use = 4};
 #endif
 
 
@@ -280,11 +288,11 @@ namespace plf
 
 
 
-	template< class T > struct remove_pointer 						 {typedef T type;};
-	template< class T > struct remove_pointer<T*>					 {typedef T type;};
-	template< class T > struct remove_pointer<T* const>			 {typedef T type;};
-	template< class T > struct remove_pointer<T* volatile>		 {typedef T type;};
-	template< class T > struct remove_pointer<T* const volatile> {typedef T type;};
+	template< class T > struct remove_pointer 						{typedef T type;};
+	template< class T > struct remove_pointer<T*>					{typedef T type;};
+	template< class T > struct remove_pointer<T* const>				{typedef T type;};
+	template< class T > struct remove_pointer<T* volatile>			{typedef T type;};
+	template< class T > struct remove_pointer<T* const volatile>	{typedef T type;};
 
 
 
@@ -327,7 +335,7 @@ namespace plf
 	PLF_CONSTFUNC void random_access_sort(const iterator_type first, comparison_function compare, const size_type size)
 	{
 		typedef typename derive_type<is_pointer<iterator_type>::value, iterator_type>::type	element_type;
-		typedef typename std::allocator<size_type> 																		size_type_allocator_type;
+		typedef typename std::allocator<size_type> size_type_allocator_type;
 
 		size_type_allocator_type size_type_allocator;
 		size_type * const sort_array = PLF_ALLOCATE(size_type_allocator_type, size_type_allocator, size, NULL);
@@ -339,15 +347,8 @@ namespace plf
 			PLF_CONSTRUCT(size_type_allocator_type, size_type_allocator, size_type_pointer, index);
 		}
 
-
-		// Now, sort the pointers by the values they point to (std::sort is default sort function if the macro below is not defined):
-		#ifndef PLF_SORT_FUNCTION
-			std::sort(sort_array, size_type_pointer, random_access_sort_dereferencer<comparison_function, iterator_type, size_type>(compare, first));
-		#else
-			PLF_SORT_FUNCTION(sort_array, size_type_pointer, random_access_sort_dereferencer<comparison_function, iterator_type, size_type>(compare, first));
-		#endif
-
-
+		// Now, sort the pointers by the values they point to (std::sort is default sort function if the macro below is not defined prior to header inclusion):
+		PLF_SORT_FUNCTION(sort_array, size_type_pointer, random_access_sort_dereferencer<comparison_function, iterator_type, size_type>(compare, first));
 
 		// Sort the actual elements via the tuple array:
 		size_type index = 0;
@@ -464,74 +465,97 @@ namespace plf
 		}
 
 		typedef typename derive_type<is_pointer<iterator_type>::value, iterator_type>::type	element_type;
-		typedef typename std::size_t																							size_type;
-		typedef pointer_index_tuple<element_type *, size_type> 												item_index_tuple;
 
-		typedef typename std::allocator<item_index_tuple> tuple_allocator_type;
-		tuple_allocator_type tuple_allocator;
-
-		item_index_tuple * const sort_array = PLF_ALLOCATE(tuple_allocator_type, tuple_allocator, size, NULL);
-		item_index_tuple *tuple_pointer = sort_array;
-
-		// Construct pointers to all elements in the sequence:
-		size_type index = 0;
-
-		for (iterator_type current_element = first; current_element != last; ++current_element, ++tuple_pointer, ++index)
-		{
-			#ifdef PLF_VARIADICS_SUPPORT
-				PLF_CONSTRUCT(tuple_allocator_type, tuple_allocator, tuple_pointer, &*current_element, index);
-			#else
-				PLF_CONSTRUCT(tuple_allocator_type, tuple_allocator, tuple_pointer, item_index_tuple(&*current_element, index));
-			#endif
-		}
-
-
-		// Now, sort the pointers by the values they point to (std::sort is default sort function if the macro below is not defined):
-		#ifndef PLF_SORT_FUNCTION
-			std::sort(sort_array, sort_array + size, sort_dereferencer<comparison_function, item_index_tuple>(compare));
+		#ifdef PLF_TYPE_TRAITS_SUPPORT
+			if PLF_CONSTEXPR (std::is_trivially_copyable<element_type>::value && sizeof(element_type) <= sizeof(element_type *)) // If element is smaller than a pointer, just copy to an array and sort that then copy back - faster
 		#else
-			PLF_SORT_FUNCTION(sort_array, sort_array + size, sort_dereferencer<comparison_function, item_index_tuple>(compare));
+			if PLF_CONSTEXPR (sizeof(element_type) <= sizeof(element_type *))
 		#endif
-
-
-		// Sort the actual elements via the tuple array:
-		index = 0;
-
-		for (item_index_tuple *current_tuple = sort_array; current_tuple != tuple_pointer; ++current_tuple, ++index)
 		{
-			if (current_tuple->original_index != index)
+			typedef typename std::allocator<element_type> allocator_type;
+			allocator_type alloc;
+			element_type * const sort_array = PLF_ALLOCATE(allocator_type, alloc, size, NULL), * const end = sort_array + size;
+			std::uninitialized_copy(first, last, sort_array);
+			PLF_SORT_FUNCTION(sort_array, end, compare);
+			std::copy(sort_array, end, first);
+			
+			#ifdef PLF_TYPE_TRAITS_SUPPORT
+				if (!std::is_trivially_destructible<element_type>::value)
+			#endif
 			{
-				#ifdef PLF_MOVE_SEMANTICS_SUPPORT
-					element_type end_value = std::move(*(current_tuple->original_location));
-				#else
-					element_type end_value = *(current_tuple->original_location);
-				#endif
-
-				size_type destination_index = index;
-				size_type source_index = current_tuple->original_index;
-
-				do
+				for (element_type *current = sort_array; current != end; ++current)
 				{
-					#ifdef PLF_MOVE_SEMANTICS_SUPPORT
-						*(sort_array[destination_index].original_location) = std::move(*(sort_array[source_index].original_location));
-					#else
-						*(sort_array[destination_index].original_location) = *(sort_array[source_index].original_location);
-					#endif
+					PLF_DESTROY(allocator_type, alloc, current);
+				}
+			}
+			
+			PLF_DEALLOCATE(allocator_type, alloc, sort_array, size);
+			return;
+		}
+		else
+		{
+			typedef typename std::size_t							size_type;
+			typedef pointer_index_tuple<element_type *, size_type> 	item_index_tuple;
 
-					destination_index = source_index;
-					source_index = sort_array[destination_index].original_index;
-					sort_array[destination_index].original_index = destination_index;
-				} while (source_index != index);
+			typedef typename std::allocator<item_index_tuple> tuple_allocator_type;
+			tuple_allocator_type tuple_allocator;
 
-				#ifdef PLF_MOVE_SEMANTICS_SUPPORT
-					*(sort_array[destination_index].original_location) = std::move(end_value);
+			item_index_tuple * const sort_array = PLF_ALLOCATE(tuple_allocator_type, tuple_allocator, size, NULL);
+			item_index_tuple *tuple_pointer = sort_array;
+
+			// Construct pointers to all elements in the sequence:
+			size_type index = 0;
+
+			for (iterator_type current_element = first; current_element != last; ++current_element, ++tuple_pointer, ++index)
+			{
+				#ifdef PLF_VARIADICS_SUPPORT
+					PLF_CONSTRUCT(tuple_allocator_type, tuple_allocator, tuple_pointer, &*current_element, index);
 				#else
-					*(sort_array[destination_index].original_location) = end_value;
+					PLF_CONSTRUCT(tuple_allocator_type, tuple_allocator, tuple_pointer, item_index_tuple(&*current_element, index));
 				#endif
 			}
-		}
 
-		PLF_DEALLOCATE(tuple_allocator_type, tuple_allocator, sort_array, size);
+			PLF_SORT_FUNCTION(sort_array, sort_array + size, sort_dereferencer<comparison_function, item_index_tuple>(compare));
+
+			// Sort the actual elements via the tuple array:
+			index = 0;
+
+			for (item_index_tuple *current_tuple = sort_array; current_tuple != tuple_pointer; ++current_tuple, ++index)
+			{
+				if (current_tuple->original_index != index)
+				{
+					#ifdef PLF_MOVE_SEMANTICS_SUPPORT
+						element_type end_value = std::move(*(current_tuple->original_location));
+					#else
+						element_type end_value = *(current_tuple->original_location);
+					#endif
+
+					size_type destination_index = index;
+					size_type source_index = current_tuple->original_index;
+
+					do
+					{
+						#ifdef PLF_MOVE_SEMANTICS_SUPPORT
+							*(sort_array[destination_index].original_location) = std::move(*(sort_array[source_index].original_location));
+						#else
+							*(sort_array[destination_index].original_location) = *(sort_array[source_index].original_location);
+						#endif
+
+						destination_index = source_index;
+						source_index = sort_array[destination_index].original_index;
+						sort_array[destination_index].original_index = destination_index;
+					} while (source_index != index);
+
+					#ifdef PLF_MOVE_SEMANTICS_SUPPORT
+						*(sort_array[destination_index].original_location) = std::move(end_value);
+					#else
+						*(sort_array[destination_index].original_location) = end_value;
+					#endif
+				}
+			}
+
+			PLF_DEALLOCATE(tuple_allocator_type, tuple_allocator, sort_array, size);
+		}
 	}
 
 
@@ -547,21 +571,27 @@ namespace plf
 
 	template <class iterator_type, class comparison_function>
 	#ifdef PLF_TYPE_TRAITS_SUPPORT
-		PLF_CONSTFUNC void indiesort(const typename plf::enable_if<!(is_pointer<iterator_type>::value || std::is_same<typename std::iterator_traits<iterator_type>::iterator_category, std::random_access_iterator_tag>::value), iterator_type>::type first, const iterator_type last, comparison_function compare)
+		#ifdef PLF_CPP20_SUPPORT
+			PLF_CONSTFUNC void indiesort(const typename plf::enable_if<!(is_pointer<iterator_type>::value || std::is_same<typename std::iterator_traits<iterator_type>::iterator_category, std::contiguous_iterator_tag>::value), iterator_type>::type first, const iterator_type last, comparison_function compare)
+		#else
+			PLF_CONSTFUNC void indiesort(const typename plf::enable_if<!(is_pointer<iterator_type>::value || std::is_same<typename std::iterator_traits<iterator_type>::iterator_category, std::random_access_iterator_tag>::value), iterator_type>::type first, const iterator_type last, comparison_function compare)
+		#endif
 	#else
 		PLF_CONSTFUNC void indiesort(const typename plf::enable_if<!is_pointer<iterator_type>::value, iterator_type>::type first, const iterator_type last, comparison_function compare)
 	#endif
 	{
-		std::size_t size = 0;
-		for (iterator_type temp = first; temp != last; ++temp, ++size) {}
-		non_random_access_sort(first, last, compare, size);
+		non_random_access_sort(first, last, compare, std::distance(first, last));
 	}
 
 
 
 	template <class iterator_type, class comparison_function>
 	#ifdef PLF_TYPE_TRAITS_SUPPORT
-		PLF_CONSTFUNC void indiesort(const typename plf::enable_if<(is_pointer<iterator_type>::value || std::is_same<typename std::iterator_traits<iterator_type>::iterator_category, std::random_access_iterator_tag>::value), iterator_type>::type first, const iterator_type last, comparison_function compare)
+		#ifdef PLF_CPP20_SUPPORT
+			PLF_CONSTFUNC void indiesort(const typename plf::enable_if<(is_pointer<iterator_type>::value || std::is_same<typename std::iterator_traits<iterator_type>::iterator_category, std::contiguous_iterator_tag>::value), iterator_type>::type first, const iterator_type last, comparison_function compare)
+		#else
+			PLF_CONSTFUNC void indiesort(const typename plf::enable_if<(is_pointer<iterator_type>::value || std::is_same<typename std::iterator_traits<iterator_type>::iterator_category, std::random_access_iterator_tag>::value), iterator_type>::type first, const iterator_type last, comparison_function compare)
+		#endif
 	#else
 		PLF_CONSTFUNC void indiesort(const typename plf::enable_if<is_pointer<iterator_type>::value, iterator_type>::type first, const iterator_type last, comparison_function compare)
 	#endif
@@ -635,10 +665,9 @@ namespace plf
 	{
 		indiesort(container, plf::less<typename container_type::value_type>());
 	}
-
-
-
+		
 }
+
 
 #undef PLF_DECLTYPE_SUPPORT
 #undef PLF_TYPE_TRAITS_SUPPORT
@@ -656,5 +685,11 @@ namespace plf
 #if defined(_MSC_VER) && !defined(__clang__) && !defined(__GNUC__)
 	#pragma warning ( pop )
 #endif
+
+#ifdef PLF_SORT_FUNCTION_DEFINED
+	#undef PLF_SORT_FUNCTION
+	#undef PLF_SORT_FUNCTION_DEFINED
+#endif
+
 
 #endif // PLF_INDIESORT_H
