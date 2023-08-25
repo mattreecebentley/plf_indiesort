@@ -479,8 +479,8 @@ namespace plf
 
 		typedef typename derive_type<is_pointer<iterator_type>::value, iterator_type>::type	element_type;
 
-		#ifdef PLF_TYPE_TRAITS_SUPPORT
-			if PLF_CONSTEXPR ((std::is_trivially_copyable<element_type>::value || std::is_move_assignable<element_type>::value) && sizeof(element_type) <= sizeof(element_type *) * 2) // If element is smaller than a pointer, just copy to an array and sort that then copy back - faster
+ 		#ifdef PLF_TYPE_TRAITS_SUPPORT
+			if PLF_CONSTEXPR ((std::is_trivially_copyable<element_type>::value || std::is_move_assignable<element_type>::value) && sizeof(element_type) <= sizeof(element_type *) * 2) // If element is <= 2 pointers, just copy to an array and sort that then copy back - consumes less memory and may be faster
 		#else
 			if PLF_CONSTEXPR (sizeof(element_type) <= sizeof(element_type *) * 2)
 		#endif
@@ -488,24 +488,45 @@ namespace plf
 			typedef typename std::allocator<element_type> allocator_type;
 			allocator_type alloc;
 			element_type * const sort_array = PLF_ALLOCATE(allocator_type, alloc, size, NULL), * const end = sort_array + size;
-			std::uninitialized_copy(first, last, sort_array);
-			PLF_SORT_FUNCTION(sort_array, end, compare);
-			std::copy(sort_array, end, first);
-			
+
 			#ifdef PLF_TYPE_TRAITS_SUPPORT
-				if (!std::is_trivially_destructible<element_type>::value)
+				if PLF_CONSTEXPR (!std::is_trivially_copyable<element_type>::value && std::is_move_assignable<element_type>::value)
+				{
+					std::uninitialized_copy(plf::make_move_iterator(first), plf::make_move_iterator(last), sort_array);
+				}
+				else
 			#endif
 			{
-				for (element_type *current = sort_array; current != end; ++current)
+				std::uninitialized_copy(first, last, sort_array);
+			}
+			
+			PLF_SORT_FUNCTION(sort_array, end, compare);
+
+			#ifdef PLF_TYPE_TRAITS_SUPPORT
+				if PLF_CONSTEXPR (!std::is_trivially_copyable<element_type>::value && std::is_move_assignable<element_type>::value)
 				{
-					PLF_DESTROY(allocator_type, alloc, current);
+					std::copy(plf::make_move_iterator(sort_array), plf::make_move_iterator(end), first);
+				}
+				else
+			#endif
+			{
+				std::copy(sort_array, end, first);
+
+				#ifdef PLF_TYPE_TRAITS_SUPPORT
+					if (!std::is_trivially_destructible<element_type>::value)
+				#endif
+				{
+					for (element_type *current = sort_array; current != end; ++current)
+					{
+						PLF_DESTROY(allocator_type, alloc, current);
+					}
 				}
 			}
 			
 			PLF_DEALLOCATE(allocator_type, alloc, sort_array, size);
 			return;
 		}
-		else
+ 		else
 		{
 			typedef typename std::size_t							size_type;
 			typedef pointer_index_tuple<element_type *, size_type> 	item_index_tuple;
@@ -584,11 +605,7 @@ namespace plf
 
 	template <class iterator_type, class comparison_function>
 	#ifdef PLF_TYPE_TRAITS_SUPPORT
-		#ifdef PLF_CPP20_SUPPORT
-			PLF_CONSTFUNC void indiesort(const typename plf::enable_if<!(is_pointer<iterator_type>::value || std::is_same<typename std::iterator_traits<iterator_type>::iterator_category, std::contiguous_iterator_tag>::value), iterator_type>::type first, const iterator_type last, comparison_function compare)
-		#else
-			PLF_CONSTFUNC void indiesort(const typename plf::enable_if<!(is_pointer<iterator_type>::value || std::is_same<typename std::iterator_traits<iterator_type>::iterator_category, std::random_access_iterator_tag>::value), iterator_type>::type first, const iterator_type last, comparison_function compare)
-		#endif
+		PLF_CONSTFUNC void indiesort(const typename plf::enable_if<!(is_pointer<iterator_type>::value || std::is_same<typename std::iterator_traits<iterator_type>::iterator_category, std::random_access_iterator_tag>::value), iterator_type>::type first, const iterator_type last, comparison_function compare)
 	#else
 		PLF_CONSTFUNC void indiesort(const typename plf::enable_if<!is_pointer<iterator_type>::value, iterator_type>::type first, const iterator_type last, comparison_function compare)
 	#endif
@@ -600,11 +617,7 @@ namespace plf
 
 	template <class iterator_type, class comparison_function>
 	#ifdef PLF_TYPE_TRAITS_SUPPORT
-		#ifdef PLF_CPP20_SUPPORT
-			PLF_CONSTFUNC void indiesort(const typename plf::enable_if<(is_pointer<iterator_type>::value || std::is_same<typename std::iterator_traits<iterator_type>::iterator_category, std::contiguous_iterator_tag>::value), iterator_type>::type first, const iterator_type last, comparison_function compare)
-		#else
-			PLF_CONSTFUNC void indiesort(const typename plf::enable_if<(is_pointer<iterator_type>::value || std::is_same<typename std::iterator_traits<iterator_type>::iterator_category, std::random_access_iterator_tag>::value), iterator_type>::type first, const iterator_type last, comparison_function compare)
-		#endif
+		PLF_CONSTFUNC void indiesort(const typename plf::enable_if<(is_pointer<iterator_type>::value || std::is_same<typename std::iterator_traits<iterator_type>::iterator_category, std::random_access_iterator_tag>::value), iterator_type>::type first, const iterator_type last, comparison_function compare)
 	#else
 		PLF_CONSTFUNC void indiesort(const typename plf::enable_if<is_pointer<iterator_type>::value, iterator_type>::type first, const iterator_type last, comparison_function compare)
 	#endif
@@ -625,11 +638,7 @@ namespace plf
 	// Container-based templates:
 
 	#ifdef PLF_TYPE_TRAITS_SUPPORT
-		#ifdef PLF_CPP20_SUPPORT
-			template <class container_type, class comparison_function, typename plf::enable_if<std::is_same<typename std::iterator_traits<typename container_type::iterator>::iterator_category, std::contiguous_iterator_tag>::value, container_type>::type * = nullptr>
-		#else
-			template <class container_type, class comparison_function, typename plf::enable_if<std::is_same<typename std::iterator_traits<typename container_type::iterator>::iterator_category, std::random_access_iterator_tag>::value, container_type>::type * = nullptr>
-		#endif
+		template <class container_type, class comparison_function, typename plf::enable_if<std::is_same<typename std::iterator_traits<typename container_type::iterator>::iterator_category, std::random_access_iterator_tag>::value, container_type>::type * = nullptr>
 		PLF_CONSTFUNC void indiesort(container_type &container, comparison_function compare)
 		{
 			call_random_access_sort(container.begin(), container.end(), compare);
@@ -657,11 +666,7 @@ namespace plf
 
 
 	#ifdef PLF_TYPE_TRAITS_SUPPORT
-		#ifdef PLF_CPP20_SUPPORT
-			template <class container_type, class comparison_function, typename plf::enable_if<!std::is_same<typename std::iterator_traits<typename container_type::iterator>::iterator_category, std::contiguous_iterator_tag>::value, container_type>::type * = nullptr>
-		#else
-			template <class container_type, class comparison_function, typename plf::enable_if<!std::is_same<typename std::iterator_traits<typename container_type::iterator>::iterator_category, std::random_access_iterator_tag>::value, container_type>::type * = nullptr>
-		#endif
+		template <class container_type, class comparison_function, typename plf::enable_if<!std::is_same<typename std::iterator_traits<typename container_type::iterator>::iterator_category, std::random_access_iterator_tag>::value, container_type>::type * = nullptr>
 	#else
 		template <class container_type, class comparison_function>
 	#endif
