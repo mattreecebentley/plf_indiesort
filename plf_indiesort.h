@@ -405,7 +405,7 @@ namespace plf
 			if PLF_CONSTEXPR (sizeof(element_type) < 152)
 		#endif
 		{
-			PLF_SORT_FUNCTION(first, last);
+			PLF_SORT_FUNCTION(first, last, compare);
 			return;
 		}
 
