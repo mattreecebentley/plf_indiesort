@@ -490,7 +490,11 @@ namespace plf
 			element_type * const sort_array = PLF_ALLOCATE(allocator_type, alloc, size, NULL), * const end = sort_array + size;
 
 			#ifdef PLF_TYPE_TRAITS_SUPPORT
-				if PLF_CONSTEXPR (!std::is_trivially_copyable<element_type>::value && std::is_move_assignable<element_type>::value)
+				if PLF_CONSTEXPR (std::is_trivially_copyable<element_type>::value) // avoid construction
+				{
+					std::copy(first, last, sort_array);
+				}
+				else if PLF_CONSTEXPR (std::is_move_assignable<element_type>::value)
 				{
 					std::uninitialized_copy(plf::make_move_iterator(first), plf::make_move_iterator(last), sort_array);
 				}
@@ -499,7 +503,7 @@ namespace plf
 			{
 				std::uninitialized_copy(first, last, sort_array);
 			}
-			
+
 			PLF_SORT_FUNCTION(sort_array, end, compare);
 
 			#ifdef PLF_TYPE_TRAITS_SUPPORT
