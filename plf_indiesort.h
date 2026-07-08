@@ -55,91 +55,6 @@
 
 namespace plf
 {
-	// std:: tool replacements for C++03/98/11 support:
-
-#ifndef PLF_TOOLS
-	#define PLF_TOOLS
-
-	template <bool condition, class T = void>
-	struct enable_if
-	{
-		typedef T type;
-	};
-
-	template <class T>
-	struct enable_if<false, T>
-	{};
-
-
-
-	template <bool flag, class is_true, class is_false> struct conditional;
-
-	template <class is_true, class is_false> struct conditional<true, is_true, is_false>
-	{
-		typedef is_true type;
-	};
-
-	template <class is_true, class is_false> struct conditional<false, is_true, is_false>
-	{
-		typedef is_false type;
-	};
-
-
-
-	template <class element_type>
-	struct less
-	{
-		bool operator() (const element_type &a, const element_type &b) const PLF_NOEXCEPT
-		{
-			return a < b;
-		}
-	};
-
-
-
-	template<class element_type>
-	struct equal_to
-	{
-		const element_type value;
-
-		explicit equal_to(const element_type store_value): // no noexcept as element may allocate and potentially throw when copied
-			value(store_value)
-		{}
-
-		bool operator() (const element_type compare_value) const PLF_NOEXCEPT
-		{
-			return value == compare_value;
-		}
-	};
-
-
-
-	// To enable conversion to void * when allocator supplies non-raw pointers:
-	template <class source_pointer_type>
-	static PLF_CONSTFUNC void * void_cast(const source_pointer_type source_pointer) PLF_NOEXCEPT
-	{
-		#if defined(PLF_CPP20_SUPPORT)
-			return void_cast(std::to_address(source_pointer));
-		#else
-			return void_cast(&*source_pointer);
-		#endif
-	}
-
-
-
-	#ifdef PLF_MOVE_SEMANTICS_SUPPORT
-		template <class iterator_type>
-		PLF_CONSTFUNC std::move_iterator<iterator_type> make_move_iterator(iterator_type it)
-		{
-			return std::move_iterator<iterator_type>(std::move(it));
-		}
-	#endif
-
-
-
-	enum priority { performance = 1, memory_use = 4};
-#endif
-
 
 	template <typename T>
 	struct is_pointer
@@ -395,7 +310,7 @@ namespace plf
 		}
  		else
 		{
-			typedef typename std::size_t							size_type;
+			typedef typename std::size_t										size_type;
 			typedef pointer_index_tuple<element_type *, size_type> 	item_index_tuple;
 
 			typedef typename std::allocator<item_index_tuple> tuple_allocator_type;
