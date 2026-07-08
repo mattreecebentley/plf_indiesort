@@ -1,4 +1,4 @@
-// Copyright (c) 2023, Matthew Bentley (mattreecebentley@gmail.com) www.plflib.org
+// Copyright (c) 2026, Matthew Bentley (mattreecebentley@gmail.com) www.plflib.org
 
 // zLib license (https://www.zlib.net/zlib_license.html):
 // This software is provided 'as-is', without any express or implied
@@ -21,146 +21,13 @@
 #define PLF_INDIESORT_H
 
 
-// Compiler-specific defines used by indiesort:
-
-// Define default cases before possibly redefining:
-#define PLF_CONSTFUNC
-#define PLF_NOEXCEPT throw()
-#define PLF_CONSTEXPR
-
-#if defined(_MSC_VER) && !defined(__clang__) && !defined(__GNUC__)
-    // Suppress incorrect (unfixed MSVC bug) warnings re: constant expressions in constexpr-if statements
-	#pragma warning ( push )
-    #pragma warning ( disable : 4127 )
-
-	#if _MSC_VER >= 1600
-		#define PLF_DECLTYPE_SUPPORT
-		#define PLF_MOVE_SEMANTICS_SUPPORT
-	#endif
-	#if _MSC_VER >= 1700
-		#define PLF_TYPE_TRAITS_SUPPORT
-		#define PLF_ALLOCATOR_TRAITS_SUPPORT
-	#endif
-	#if _MSC_VER >= 1800
-		#define PLF_VARIADICS_SUPPORT // Variadics, in this context, means both variadic templates and variadic macros are supported
-	#endif
-	#if _MSC_VER >= 1900
-		#undef PLF_NOEXCEPT
-		#define PLF_NOEXCEPT noexcept
-	#endif
-
-	#if defined(_MSVC_LANG) && (_MSVC_LANG >= 201703L)
-		#undef PLF_CONSTEXPR
-		#define PLF_CONSTEXPR constexpr
-	#endif
-
-	#if defined(_MSVC_LANG) && (_MSVC_LANG >= 202002L) && _MSC_VER >= 1929
-		#undef PLF_CONSTFUNC
-		#define PLF_CONSTFUNC constexpr
-	#endif
-
-#elif defined(__cplusplus) && __cplusplus >= 201103L // C++11 support, at least
-	#define PLF_MOVE_SEMANTICS_SUPPORT
-
-	#if defined(__GNUC__) && defined(__GNUC_MINOR__) && !defined(__clang__) // If compiler is GCC/G++
-		#if (__GNUC__ == 4 && __GNUC_MINOR__ >= 3) || __GNUC__ > 4 // 4.2 and below do not support variadic templates or decltype
-			#define PLF_VARIADICS_SUPPORT
-			#define PLF_DECLTYPE_SUPPORT
-		#endif
-		#if (__GNUC__ == 4 && __GNUC_MINOR__ >= 6) || __GNUC__ > 4
-			#undef PLF_NOEXCEPT
-			#define PLF_NOEXCEPT noexcept
-		#endif
-		#if (__GNUC__ == 4 && __GNUC_MINOR__ >= 7) || __GNUC__ > 4
-			#define PLF_ALLOCATOR_TRAITS_SUPPORT
-		#endif
-		#if __GNUC__ >= 5 // GCC v4.9 and below do not support std::is_trivially_copyable
-			#define PLF_TYPE_TRAITS_SUPPORT
-		#endif
-	#elif defined(__clang__) && !defined(__GLIBCXX__) && !defined(_LIBCPP_CXX03_LANG)
-		#if __clang_major__ >= 3 // clang versions < 3 don't support __has_feature() or traits
-			#define PLF_ALLOCATOR_TRAITS_SUPPORT
-			#define PLF_TYPE_TRAITS_SUPPORT
-
-			#if __has_feature(cxx_decltype)
-				#define PLF_DECLTYPE_SUPPORT
-			#endif
-			#if __has_feature(cxx_noexcept)
-				#undef PLF_NOEXCEPT
-				#define PLF_NOEXCEPT noexcept
-			#endif
-			#if __has_feature(cxx_rvalue_references) && !defined(_LIBCPP_HAS_NO_RVALUE_REFERENCES)
-				#define PLF_MOVE_SEMANTICS_SUPPORT
-			#endif
-			#if __has_feature(cxx_variadic_templates) && !defined(_LIBCPP_HAS_NO_VARIADICS)
-				#define PLF_VARIADICS_SUPPORT
-			#endif
-		#endif
-	#elif defined(__GLIBCXX__) // Using another compiler type with libstdc++ - we are assuming full c++11 compliance for compiler - which may not be true
-		#define PLF_DECLTYPE_SUPPORT
-
-		#if __GLIBCXX__ >= 20080606 	// libstdc++ 4.2 and below do not support variadic templates
-			#define PLF_VARIADICS_SUPPORT
-		#endif
-		#if __GLIBCXX__ >= 20120322
-			#define PLF_ALLOCATOR_TRAITS_SUPPORT
-			#undef PLF_NOEXCEPT
-			#define PLF_NOEXCEPT noexcept
-		#endif
-		#if __GLIBCXX__ >= 20150422 // libstdc++ v4.9 and below do not support std::is_trivially_copyable
-			#define PLF_TYPE_TRAITS_SUPPORT
-		#endif
-	#elif defined(_LIBCPP_CXX03_LANG) // Special case for checking C++11 support with libcpp
-		#if !defined(_LIBCPP_HAS_NO_VARIADICS)
-			#define PLF_VARIADICS_SUPPORT
-		#endif
-	#else // Assume full support for other compilers and standard libraries
-		#define PLF_DECLTYPE_SUPPORT
-		#define PLF_INITIALIZER_LIST_SUPPORT
-		#define PLF_ALLOCATOR_TRAITS_SUPPORT
-		#define PLF_VARIADICS_SUPPORT
-		#define PLF_TYPE_TRAITS_SUPPORT
-		#undef PLF_NOEXCEPT
-		#define PLF_NOEXCEPT noexcept
-	#endif
-
-	#if __cplusplus >= 201703L  &&	((defined(__clang__) && ((__clang_major__ == 3 && __clang_minor__ == 9) || __clang_major__ > 3))	||   (defined(__GNUC__) && __GNUC__ >= 7)   ||	 (!defined(__clang__) && !defined(__GNUC__)))
-		#undef PLF_CONSTEXPR
-		#define PLF_CONSTEXPR constexpr
-	#endif
-
-	#if __cplusplus > 201704L && ((((defined(__clang__) && !defined(__APPLE_CC__) && __clang_major__ >= 14) || (defined(__GNUC__) && (__GNUC__ > 11 || (__GNUC__ == 11 && __GNUC_MINOR__ > 0)))) && ((defined(_LIBCPP_VERSION) && _LIBCPP_VERSION >= 14) || (defined(__GLIBCXX__) && __GLIBCXX__ >= 201806L))) || (!defined(__clang__) && !defined(__GNUC__)))
-		#define PLF_CPP20_SUPPORT
-		#undef PLF_CONSTFUNC
-		#define PLF_CONSTFUNC constexpr
-	#endif
+#ifndef PLF_COMPILER_DEFINES
+	#define PLF_INDIESORT_DEFINES // ie. No encapsulating unit/class has previously defined the compiler feature macros in plf_tools.h below, so allow this header to undefine them at it's end.
 #endif
 
-
-
-
-#ifdef PLF_ALLOCATOR_TRAITS_SUPPORT
-	#ifdef PLF_VARIADICS_SUPPORT
-		#define PLF_CONSTRUCT(the_allocator, allocator_instance, location, ...) std::allocator_traits<the_allocator>::construct(allocator_instance, location, __VA_ARGS__)
-	#else
-		#define PLF_CONSTRUCT(the_allocator, allocator_instance, location, data)	std::allocator_traits<the_allocator>::construct(allocator_instance, location, data)
-	#endif
-
-	#define PLF_DESTROY(the_allocator, allocator_instance, location)				std::allocator_traits<the_allocator>::destroy(allocator_instance, location)
-	#define PLF_ALLOCATE(the_allocator, allocator_instance, size, hint)			std::allocator_traits<the_allocator>::allocate(allocator_instance, size, hint)
-	#define PLF_DEALLOCATE(the_allocator, allocator_instance, location, size)	std::allocator_traits<the_allocator>::deallocate(allocator_instance, location, size)
-#else
-	#ifdef PLF_VARIADICS_SUPPORT
-		#define PLF_CONSTRUCT(the_allocator, allocator_instance, location, ...) 	(allocator_instance).construct(location, __VA_ARGS__)
-	#else
-		#define PLF_CONSTRUCT(the_allocator, allocator_instance, location, data)	(allocator_instance).construct(location, data)
-	#endif
-
-	#define PLF_DESTROY(the_allocator, allocator_instance, location)				(allocator_instance).destroy(location)
-	#define PLF_ALLOCATE(the_allocator, allocator_instance, size, hint)			(allocator_instance).allocate(size, hint)
-	#define PLF_DEALLOCATE(the_allocator, allocator_instance, location, size)	(allocator_instance).deallocate(location, size)
-#endif
-
+#define PLF_INCLUDE_UNINITIALIZED_TOOLS
+#define PLF_INCLUDE_TOOLS
+#include "plf_tools.h"
 
 
 #ifndef PLF_SORT_FUNCTION
@@ -252,9 +119,9 @@ namespace plf
 	static PLF_CONSTFUNC void * void_cast(const source_pointer_type source_pointer) PLF_NOEXCEPT
 	{
 		#if defined(PLF_CPP20_SUPPORT)
-			return static_cast<void *>(std::to_address(source_pointer));
+			return void_cast(std::to_address(source_pointer));
 		#else
-			return static_cast<void *>(&*source_pointer);
+			return void_cast(&*source_pointer);
 		#endif
 	}
 
@@ -480,7 +347,7 @@ namespace plf
 		typedef typename derive_type<is_pointer<iterator_type>::value, iterator_type>::type	element_type;
 
  		#ifdef PLF_TYPE_TRAITS_SUPPORT
-			if PLF_CONSTEXPR ((std::is_trivially_copyable<element_type>::value || std::is_move_assignable<element_type>::value) && sizeof(element_type) <= sizeof(element_type *) * 2) // If element is <= 2 pointers, just copy to an array and sort that then copy back - consumes less memory and may be faster
+			if PLF_CONSTEXPR ((std::is_trivially_copy_constructible<element_type>::value || std::is_nothrow_move_constructible<element_type>::value) && sizeof(element_type) <= sizeof(element_type *) * 2) // If element is <= 2 pointers, just copy to an array and sort that then copy back - consumes less memory and may be faster
 		#else
 			if PLF_CONSTEXPR (sizeof(element_type) <= sizeof(element_type *) * 2)
 		#endif
@@ -489,25 +356,21 @@ namespace plf
 			allocator_type alloc;
 			element_type * const sort_array = PLF_ALLOCATE(allocator_type, alloc, size, NULL), * const end = sort_array + size;
 
-			#ifdef PLF_TYPE_TRAITS_SUPPORT
-				if PLF_CONSTEXPR (std::is_trivially_copyable<element_type>::value) // avoid construction
+			#if defined(PLF_TYPE_TRAITS_SUPPORT) && defined(PLF_MOVE_SEMANTICS_SUPPORT)
+				if PLF_CONSTEXPR (!std::is_trivially_copy_constructible<element_type>::value && std::is_nothrow_move_constructible<element_type>::value)
 				{
-					std::copy(first, last, sort_array);
-				}
-				else if PLF_CONSTEXPR (std::is_move_assignable<element_type>::value)
-				{
-					std::uninitialized_copy(plf::make_move_iterator(first), plf::make_move_iterator(last), sort_array);
+					plf::uninitialized_move(first, last, sort_array, alloc);
 				}
 				else
 			#endif
 			{
-				std::uninitialized_copy(first, last, sort_array);
+				plf::uninitialized_copy(first, last, sort_array, alloc);
 			}
 
 			PLF_SORT_FUNCTION(sort_array, end, compare);
 
-			#ifdef PLF_TYPE_TRAITS_SUPPORT
-				if PLF_CONSTEXPR (!std::is_trivially_copyable<element_type>::value && std::is_move_assignable<element_type>::value)
+			#if defined(PLF_TYPE_TRAITS_SUPPORT) && defined(PLF_MOVE_SEMANTICS_SUPPORT)
+				if PLF_CONSTEXPR (!std::is_trivially_copy_assignable<element_type>::value && std::is_nothrow_move_assignable<element_type>::value)
 				{
 					std::copy(plf::make_move_iterator(sort_array), plf::make_move_iterator(end), first);
 				}
@@ -526,7 +389,7 @@ namespace plf
 					}
 				}
 			}
-			
+
 			PLF_DEALLOCATE(allocator_type, alloc, sort_array, size);
 			return;
 		}
@@ -695,30 +558,18 @@ namespace plf
 	{
 		indiesort(container, plf::less<typename container_type::value_type>());
 	}
-		
+
 }
 
-
-#undef PLF_DECLTYPE_SUPPORT
-#undef PLF_TYPE_TRAITS_SUPPORT
-#undef PLF_ALLOCATOR_TRAITS_SUPPORT
-#undef PLF_VARIADICS_SUPPORT
-#undef PLF_MOVE_SEMANTICS_SUPPORT
-#undef PLF_NOEXCEPT
-#undef PLF_CONSTEXPR
-#undef PLF_CONSTFUNC
-
-#undef PLF_CONSTRUCT
-#undef PLF_ALLOCATE
-#undef PLF_DEALLOCATE
-
-#if defined(_MSC_VER) && !defined(__clang__) && !defined(__GNUC__)
-	#pragma warning ( pop )
-#endif
 
 #ifdef PLF_SORT_FUNCTION_DEFINED
 	#undef PLF_SORT_FUNCTION
 	#undef PLF_SORT_FUNCTION_DEFINED
+#endif
+
+
+#ifdef PLF_INDIESORT_DEFINES
+	#include "plf_tools_undef.h"
 #endif
 
 
