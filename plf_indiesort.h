@@ -293,15 +293,16 @@ namespace plf
 			#endif
 			{
 				std::copy(sort_array, end, first);
+			}
 
-				#ifdef PLF_TYPE_TRAITS_SUPPORT
-					if (!std::is_trivially_destructible<element_type>::value)
-				#endif
+			// Destroy the array elements, whether they were moved or copied back:
+			#ifdef PLF_TYPE_TRAITS_SUPPORT
+				if (!std::is_trivially_destructible<element_type>::value)
+			#endif
+			{
+				for (element_type *current = sort_array; current != end; ++current)
 				{
-					for (element_type *current = sort_array; current != end; ++current)
-					{
-						PLF_DESTROY(allocator_type, alloc, current);
-					}
+					PLF_DESTROY(allocator_type, alloc, current);
 				}
 			}
 

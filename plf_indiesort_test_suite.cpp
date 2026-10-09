@@ -87,6 +87,26 @@ struct small_struct_non_trivial
 
 
 
+#ifdef PLF_MOVE_SEMANTICS_SUPPORT
+	// Counts live instances, to check that every element indiesort constructs is also destroyed. It is small and nothrow-movable, so in a std::list it is sorted by moving it into and out of a temporary array:
+	int live_instances = 0;
+
+	struct counted_struct
+	{
+		int number;
+
+		counted_struct(const int num) : number(num) { ++live_instances; }
+		counted_struct(const counted_struct &source) : number(source.number) { ++live_instances; }
+		counted_struct(counted_struct &&source) PLF_NOEXCEPT : number(source.number) { ++live_instances; }
+		counted_struct & operator = (const counted_struct &source) { number = source.number; return *this; }
+		counted_struct & operator = (counted_struct &&source) PLF_NOEXCEPT { number = source.number; return *this; }
+		~counted_struct() { --live_instances; }
+		bool operator < (const counted_struct &source) const { return number < source.number; }
+	};
+#endif
+
+
+
 struct large_struct
 {
 	int numbers[100];
@@ -480,6 +500,32 @@ int main()
 
 				std::cout << "std::list large_struct sort test passed\n";
 			}
+
+
+
+			#ifdef PLF_MOVE_SEMANTICS_SUPPORT
+			{
+				title2("std::list element destruction test");
+
+				{
+					std::list<counted_struct> clist;
+
+					for (int i = 0; i != 100; ++i)
+					{
+						clist.push_back(counted_struct(rand() & 65535));
+					}
+
+					plf::indiesort(clist);
+				}
+
+				if (live_instances != 0)
+				{
+					breakfail("std::list element destruction test: not every element was destroyed.");
+				}
+
+				std::cout << "std::list element destruction test passed\n";
+			}
+			#endif
 
 
 		}
