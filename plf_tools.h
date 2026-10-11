@@ -43,6 +43,7 @@
 	#if defined(_MSC_VER) && !defined(__clang__) && !defined(__GNUC__)
 		#if _MSC_VER >= 1600
 			#define PLF_MOVE_SEMANTICS_SUPPORT
+			#define PLF_DECLTYPE_SUPPORT
 		#endif
 		#if _MSC_VER >= 1700
 			#define PLF_TYPE_TRAITS_SUPPORT
@@ -85,11 +86,16 @@
 			#if _MSVC_LANG >= 202302L && _MSC_VER >= 1944
 				#define PLF_CONSTEVAL_SUPPORT
 			#endif
+
+			#if _MSVC_LANG >= 202302L && _MSC_VER >= 1951
+				#define PLF_ASSUME_SUPPORT
+			#endif
 		#endif
 	#elif defined(__cplusplus) && __cplusplus >= 201103L // C++11 support, at least
 		#if defined(__GNUC__) && defined(__GNUC_MINOR__) && !defined(__clang__) // If compiler is GCC/G++
 			#if (__GNUC__ == 4 && __GNUC_MINOR__ >= 3) || __GNUC__ > 4
 				#define PLF_MOVE_SEMANTICS_SUPPORT
+				#define PLF_DECLTYPE_SUPPORT
 				#define PLF_VARIADICS_SUPPORT
 			#endif
 			#if (__GNUC__ == 4 && __GNUC_MINOR__ >= 4) || __GNUC__ > 4
@@ -123,6 +129,9 @@
 			#if __has_feature(cxx_alignas) && __has_feature(cxx_alignof)
 				#define PLF_ALIGNMENT_SUPPORT
 			#endif
+			#if __has_feature(cxx_decltype)
+				#define PLF_DECLTYPE_SUPPORT
+			#endif
 			#if __has_feature(cxx_noexcept)
 				#define PLF_CPP11_SUPPORT
 				#undef PLF_NOEXCEPT
@@ -144,6 +153,7 @@
 			#endif
 		#elif defined(__GLIBCXX__) // Using another compiler type with libstdc++ - we are assuming full c++11 compliance for compiler - which may not be true
 			#define PLF_DEFAULT_SUPPORT
+			#define PLF_DECLTYPE_SUPPORT
 
 			#if __GLIBCXX__ >= 20080606
 				#define PLF_MOVE_SEMANTICS_SUPPORT
@@ -174,6 +184,7 @@
 				#define PLF_VARIADICS_SUPPORT
 			#endif
 		#else // Assume type traits and initializer support for other compilers and standard library implementations
+			#define PLF_DECLTYPE_SUPPORT
 			#define PLF_DEFAULT_SUPPORT
 			#define PLF_MOVE_SEMANTICS_SUPPORT
 			#define PLF_VARIADICS_SUPPORT
@@ -203,6 +214,10 @@
 
 		#if __cplusplus >= 202302L && (((defined(__clang__) && __clang_major__ >= 14) || (defined(__GNUC__) && (__GNUC__ >= 12))) || (!defined(__clang__) && !defined(__GNUC__)))
 			#define PLF_CONSTEVAL_SUPPORT
+		#endif
+
+		#if __cplusplus >= 202302L && (((defined(__clang__) && __clang_major__ >= 19) || (defined(__GNUC__) && (__GNUC__ >= 13))) || (!defined(__clang__) && !defined(__GNUC__)))
+			#define PLF_ASSUME_SUPPORT
 		#endif
 	#endif
 
@@ -264,12 +279,12 @@
 
 	#include <memory> // to_address
 
-	#ifdef PLF_CPP20_SUPPORT
-		#include <ranges>
+	#ifdef PLF_MOVE_SEMANTICS_SUPPORT
+		#include <iterator> // move_iterator
 	#endif
 
-	#if defined(PLF_MOVE_SEMANTICS_SUPPORT)
-		#include <iterator> // move_iterator
+	#ifdef PLF_CPP20_SUPPORT
+		#include <ranges>
 	#endif
 
 
@@ -369,11 +384,8 @@
 			concept compatible_range = std::ranges::input_range<range_type> && std::convertible_to<std::ranges::range_reference_t<range_type>, element_type>;
 
 			// For non-C++23-compliant libraries which do not include std::ranges::from_range_t - this is so the rangesv3 constructor overloads will work unambiguously:
-			namespace ranges
-			{
-				struct from_range_t {};
-				constexpr from_range_t from_range;
-			}
+			struct from_range_t {};
+			constexpr from_range_t from_range;
 		#endif
 
 
@@ -447,7 +459,7 @@
 		template<typename storage_type>
 		static PLF_CONSTFUNC std::size_t countr_zero(const storage_type value)
 		{
-			#ifdef PLF_CPP20_SUPPORT
+			#ifdef PLF_ASSUME_SUPPORT
 				[[assume(value != 0)]];
 			#endif
 
@@ -511,7 +523,7 @@
 		template<typename storage_type>
 		static PLF_CONSTFUNC std::size_t countl_zero(const storage_type value)
 		{
-			#ifdef PLF_CPP20_SUPPORT
+			#ifdef PLF_ASSUME_SUPPORT
 				[[assume(value != 0)]];
 			#endif
 

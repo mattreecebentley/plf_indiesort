@@ -430,7 +430,7 @@ namespace plf
 
 
 
-	#ifdef PLF_DECLTYPE_SUPPORT
+	#if defined(PLF_DECLTYPE_SUPPORT) && defined(PLF_VARIADICS_SUPPORT)
 		template <typename T>
 		class has_size_function
 		{
@@ -455,7 +455,7 @@ namespace plf
 	#endif
 	PLF_CONSTFUNC void indiesort(container_type &container, comparison_function compare)
 	{
-		#ifdef PLF_DECLTYPE_SUPPORT
+		#if defined(PLF_DECLTYPE_SUPPORT) && defined(PLF_VARIADICS_SUPPORT)
 			if PLF_CONSTEXPR (has_size_function<container_type>::value)
 			{
 				non_random_access_sort(container.begin(), container.end(), compare, static_cast<std::size_t>(container.size()));
